@@ -1,2 +1,7 @@
-# TESS-Science-plots
-The "plots" project at online.tess.science!
+# delicatessen
+
+Serving you all the finest plots at online.tess.science
+
+
+
+
