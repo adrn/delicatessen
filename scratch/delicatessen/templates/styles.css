@@ -17,6 +17,16 @@ h1 {
     font-size: 1.8em;
     text-transform: uppercase;
 }
+h2 {
+    font-size: 14pt;
+    line-height: 1 !important;
+    margin: 0.25em 0em !important;
+}
+h3 {
+    margin: 0;
+    font-size: 10pt;
+    color: #aaaaaa;
+}
 a:link {
     font-weight: bold;
     text-decoration: none;
@@ -52,6 +62,10 @@ p {
     height: 100%;
 }
 
+.deli-selector {
+    padding: 5px !important;
+}
+
 .deli-selector label {
     color: #0275d8 !important;
     text-align: center;
@@ -61,8 +75,31 @@ p {
 
 .deli-selector select {
     background-image: none !important;
+    border-radius: 0px !important;
+    padding: 0 !important;
 }
 
 .deli-selector select option:checked {
-    background: #1e90ff repeat url("templates/cool-blue.png");
+    /* 
+    HACK: Keep the color blue even when
+    the element is not focused. We need
+    to update the url to this image
+    if the app changes location.
+    */
+    background: #1e90ff repeat url("https://raw.githubusercontent.com/adrn/delicatessen/master/scratch/delicatessen/templates/cool-blue.png");
+}
+
+
+.deli-selector select option::before {
+    content: "  ";
+}
+
+.extras{
+    border: 1px solid #dddddd !important;
+    border-radius: 5px !important;
+}
+
+.build-your-own{
+    border: 1px solid #dddddd !important;
+    border-radius: 5px !important;
 }

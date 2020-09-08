@@ -12,6 +12,8 @@ from bokeh.models import (
 from bokeh.plotting import figure
 from bokeh.models.tools import TapTool
 from bokeh.models.callbacks import CustomJS
+from bokeh.palettes import Viridis256
+from bokeh.transform import linear_cmap
 import os
 
 PATH = os.path.abspath(os.path.dirname(__file__))
@@ -45,7 +47,7 @@ y_axis = Select(
 )
 s_axis = Select(
     title="Marker Size",
-    options=sorted(axis_map.keys()),
+    options=sorted(axis_map.keys()) + ["None"],
     value="Distance",
     height=150,
     name="deli-selector",
@@ -53,7 +55,7 @@ s_axis = Select(
 )
 c_axis = Select(
     title="Marker Color",
-    options=sorted(axis_map.keys()),
+    options=sorted(axis_map.keys()) + ["None"],
     value="Distance",
     height=150,
     name="deli-selector",
@@ -72,7 +74,12 @@ plot1 = figure(
     sizing_mode="scale_both",
 )
 plot1.circle(
-    x="x", y="y", source=source1, size="size", color="color", line_color=None,
+    x="x",
+    y="y",
+    source=source1,
+    size="size",
+    color=linear_cmap(field_name="color", palette=Viridis256, low=0, high=1),
+    line_color=None,
 )
 taptool = plot1.select(type=TapTool)
 
@@ -91,23 +98,33 @@ def callback1(attr, old, new):
     Triggered when the user changes what we're plotting on the main plot.
 
     """
-    # Get the parameters to plot (x axis, y axis, and marker size)
+    # Update the axis labels
     x_name = axis_map[x_axis.value]
     y_name = axis_map[y_axis.value]
-    s_name = axis_map[s_axis.value]
-    c_name = axis_map[s_axis.value]
-
-    # Update the labels
     plot1.xaxis.axis_label = x_axis.value
     plot1.yaxis.axis_label = y_axis.value
+
+    # Update the "extras"
+    if s_axis.value != "None":
+        s_name = axis_map[s_axis.value]
+        size = data[s_name] / np.min(data[s_name])
+    else:
+        size = np.ones_like(data["ticid"]) * 5
+    if c_axis.value != "None":
+        c_name = axis_map[c_axis.value]
+        color = (data[c_name] - np.min(data[c_name])) / (
+            np.max(data[c_name]) - np.min(data[c_name])
+        )
+    else:
+        color = np.zeros_like(data["ticid"])
 
     # Update the data source
     source1.data = dict(
         x=data[x_name],
         y=data[y_name],
-        size=data[s_name] / np.min(data[s_name]),
+        size=size,
         ticid=data["ticid"],
-        color=data[c_name],
+        color=color,
     )
 
 
@@ -131,11 +148,35 @@ for control in controls:
     control.on_change("value", callback1)
 
 # Display things on the page
+
+spacer = Div()
+
+build_your_own_title = Div(
+    text="""
+<h2>Build-Your-Own</h2>
+<h3>Choose one per axis</h3>
+"""
+)
+extras_title = Div(
+    text="""
+<h2>Extras</h2>
+<h3>Choose one per axis</h3>
+"""
+)
+
 inputs = column(
-    row(x_axis, y_axis, width=320), row(s_axis, c_axis, width=320), width=320
+    column(
+        build_your_own_title,
+        row(x_axis, y_axis, width=320, css_classes=["build-your-own"]),
+    ),
+    spacer,
+    column(
+        extras_title, row(s_axis, c_axis, width=320, css_classes=["extras"]),
+    ),
+    width=320,
 )
 inputs.sizing_mode = "fixed"
-l = column(row(inputs, plot1), plot2)
+l = column(row(inputs, spacer, plot1), plot2)
 
 # Load and display the data
 callback1(None, None, None)
