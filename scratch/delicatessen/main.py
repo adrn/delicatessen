@@ -31,18 +31,38 @@ x_axis = Select(
     title="X Axis",
     options=sorted(axis_map.keys()),
     value="Right Ascension",
-    name="x_axis",
+    height=150,
+    name="deli-selector",
+    css_classes=["deli-selector"],
 )
 y_axis = Select(
-    title="Y Axis", options=sorted(axis_map.keys()), value="Declination"
+    title="Y Axis",
+    options=sorted(axis_map.keys()),
+    value="Declination",
+    height=150,
+    name="deli-selector",
+    css_classes=["deli-selector"],
 )
 s_axis = Select(
-    title="Marker Size", options=sorted(axis_map.keys()), value="Distance"
+    title="Marker Size",
+    options=sorted(axis_map.keys()),
+    value="Distance",
+    height=150,
+    name="deli-selector",
+    css_classes=["deli-selector"],
 )
-controls = [s_axis, x_axis, y_axis]
+c_axis = Select(
+    title="Marker Color",
+    options=sorted(axis_map.keys()),
+    value="Distance",
+    height=150,
+    name="deli-selector",
+    css_classes=["deli-selector"],
+)
+controls = [s_axis, c_axis, x_axis, y_axis]
 
 # Primary plot
-source1 = ColumnDataSource(data=dict(x=[], y=[], size=[]))
+source1 = ColumnDataSource(data=dict(x=[], y=[], size=[], color=[]))
 plot1 = figure(
     plot_height=600,
     plot_width=700,
@@ -52,7 +72,7 @@ plot1 = figure(
     sizing_mode="scale_both",
 )
 plot1.circle(
-    x="x", y="y", source=source1, size="size", line_color=None,
+    x="x", y="y", source=source1, size="size", color="color", line_color=None,
 )
 taptool = plot1.select(type=TapTool)
 
@@ -75,6 +95,7 @@ def callback1(attr, old, new):
     x_name = axis_map[x_axis.value]
     y_name = axis_map[y_axis.value]
     s_name = axis_map[s_axis.value]
+    c_name = axis_map[s_axis.value]
 
     # Update the labels
     plot1.xaxis.axis_label = x_axis.value
@@ -86,6 +107,7 @@ def callback1(attr, old, new):
         y=data[y_name],
         size=data[s_name] / np.min(data[s_name]),
         ticid=data["ticid"],
+        color=data[c_name],
     )
 
 
@@ -109,7 +131,9 @@ for control in controls:
     control.on_change("value", callback1)
 
 # Display things on the page
-inputs = column(*controls, width=320)
+inputs = column(
+    row(x_axis, y_axis, width=320), row(s_axis, c_axis, width=320), width=320
+)
 inputs.sizing_mode = "fixed"
 l = column(row(inputs, plot1), plot2)
 
