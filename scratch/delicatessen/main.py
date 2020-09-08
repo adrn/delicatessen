@@ -1,18 +1,25 @@
-"""
-To run this:
-
-    bokeh serve --show app.py
-
-"""
 import numpy as np
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput
+from bokeh.models import (
+    ColumnDataSource,
+    Div,
+    Select,
+    MultiSelect,
+    Slider,
+    TextInput,
+)
 from bokeh.plotting import figure
 from bokeh.models.tools import TapTool
+from bokeh.models.callbacks import CustomJS
+import os
+
+PATH = os.path.abspath(os.path.dirname(__file__))
 
 # Load an example dataset
-data = np.loadtxt("TESS-Gaia-mini.csv", delimiter=",", skiprows=1)
+data = np.loadtxt(
+    os.path.join(PATH, "data", "TESS-Gaia-mini.csv"), delimiter=",", skiprows=1
+)
 ra, dec, par, sid, _, _, ticid, tmag, dist = data.T
 data = dict(ra=ra, dec=dec, dist=dist, ticid=ticid)
 
@@ -21,7 +28,10 @@ axis_map = {"Right Ascension": "ra", "Declination": "dec", "Distance": "dist"}
 
 # Input controls
 x_axis = Select(
-    title="X Axis", options=sorted(axis_map.keys()), value="Right Ascension"
+    title="X Axis",
+    options=sorted(axis_map.keys()),
+    value="Right Ascension",
+    name="x_axis",
 )
 y_axis = Select(
     title="Y Axis", options=sorted(axis_map.keys()), value="Declination"
