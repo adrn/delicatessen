@@ -1,6 +1,6 @@
 # delicatessen
 
-Serving you all the finest plots at online.tess.science
+Serving you all the finest visualizations at online.tess.science
 
 
 
