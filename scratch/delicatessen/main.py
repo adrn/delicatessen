@@ -9,7 +9,20 @@ from bokeh.models import (
     Slider,
 )
 from bokeh.plotting import figure
-from bokeh.models.tools import TapTool
+from bokeh.models.tools import (
+    BoxSelectTool,
+    BoxZoomTool,
+    LassoSelectTool,
+    PanTool,
+    PolySelectTool,
+    TapTool,
+    WheelZoomTool,
+    WheelPanTool,
+    ZoomInTool,
+    ZoomOutTool,
+    HoverTool,
+    CrosshairTool,
+)
 from bokeh.models.callbacks import CustomJS
 from bokeh.palettes import Viridis256
 from bokeh.transform import linear_cmap
@@ -155,7 +168,7 @@ class PrimaryPlot(object):
             plot_width=700,
             title="",
             tooltips=[("TIC ID", "@ticid")],
-            tools="tap",
+            toolbar_location="below",
             sizing_mode="scale_both",
         )
         self.plot.circle(
@@ -168,7 +181,20 @@ class PrimaryPlot(object):
             ),
             line_color=None,
         )
-        taptool = self.plot.select(type=TapTool)
+        self.plot.add_tools(
+            BoxSelectTool(),
+            BoxZoomTool(),
+            LassoSelectTool(),
+            PanTool(),
+            PolySelectTool(),
+            TapTool(),
+            WheelZoomTool(),
+            WheelPanTool(),
+            ZoomInTool(),
+            ZoomOutTool(),
+            HoverTool(),
+            CrosshairTool(),
+        )
 
         # Register the callback
         for control in [
@@ -270,10 +296,16 @@ inputs_right = column(
     spacer,
     primary.size.layout([primary.color.widget]),
 )
-layout = column(
-    row(inputs_left, or_spacer, inputs_right, spacer, primary.plot),
-    secondary.plot,
+header = Div(
+    text="""
+<img src="https://raw.githubusercontent.com/adrn/delicatessen/master/deli_logo_med_res.gif"></img>
+""",
+    css_classes=["header-image"],
+    width=320,
+    height=100,
 )
+inputs = column(header, row(inputs_left, or_spacer, inputs_right))
+layout = column(row(inputs, spacer, primary.plot), secondary.plot,)
 
 # Load and display the data
 primary.callback(None, None, None)
