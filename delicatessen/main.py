@@ -29,12 +29,12 @@ from bokeh.models.tools import (
     HoverTool,
     CrosshairTool,
 )
-from bokeh.models.callbacks import CustomJS
+from bokeh.models import Range1d
 from bokeh.palettes import Viridis256
 from bokeh.transform import linear_cmap
 
 PATH = pathlib.Path(__file__).parent.absolute()
-DATA_PATH = PATH / 'data' / 'TESS-Gaia-mini.csv'
+DATA_PATH = PATH / "data" / "TESS-Gaia-mini.csv"
 
 # Load an example dataset - can be any file format that astropy.table can read
 data = at.Table.read(DATA_PATH)
@@ -132,7 +132,6 @@ class PrimaryPlot:
             title="X Axis",
         )
         self.yaxis = Selector(
-            name="Y Axis",
             kind="parameters",
             css_classes=["build-your-own"],
             entries=parameters,
@@ -140,7 +139,7 @@ class PrimaryPlot:
             title="Y Axis",
         )
         self.size = Selector(
-            name="Marker Size",
+            name="Sides",
             kind="parameters",
             css_classes=["sides"],
             entries=parameters,
@@ -149,7 +148,6 @@ class PrimaryPlot:
             none_allowed=True,
         )
         self.color = Selector(
-            name="Marker Color",
             kind="parameters",
             css_classes=["sides"],
             entries=parameters,
@@ -245,10 +243,7 @@ class SecondaryPlot:
         self.primary_plot = primary_plot
         self.source = ColumnDataSource(data=dict(x=[], y=[]))
         self.plot = figure(
-            plot_height=300,
-            plot_width=700,
-            title="",
-            sizing_mode="scale_both",
+            plot_height=300, plot_width=700, title="", sizing_mode="scale_both"
         )
         self.plot.circle(
             x="x",
@@ -267,15 +262,25 @@ class SecondaryPlot:
         Triggered when the user selects a point on the main plot.
 
         """
-        # Get the TIC ID
-        ticid = self.primary_plot.source.data["ticid"][
-            self.primary_plot.source.selected.indices[0]
-        ]
-        print("Fetching data for TIC ID {0}".format(ticid))
+        # If a point is selected...
+        if len(self.primary_plot.source.selected.indices):
 
-        # TODO: Actually fetch the data from MAST.
-        # For now just populate with random numbers
-        self.source.data = dict(x=np.arange(10000), y=np.random.randn(10000))
+            # Get the TIC ID
+            ticid = self.primary_plot.source.data["ticid"][
+                self.primary_plot.source.selected.indices[0]
+            ]
+            print("Fetching data for TIC ID {0}".format(ticid))
+
+            # TODO: Actually fetch the data from MAST.
+            # For now just populate with random numbers
+            self.source.data = dict(
+                x=np.linspace(0, 1, 10000), y=np.random.randn(10000)
+            )
+
+        else:
+
+            # Clear the plot
+            self.source.data = dict(x=[], y=[])
 
 
 # Instantiate the plots
@@ -287,7 +292,7 @@ secondary = SecondaryPlot(primary)
 spacer = Div()
 or_spacer = Div(css_classes=["or-spacer"])
 inputs_left = column(
-    primary.specials.layout(), spacer, primary.data.layout(), width=160
+    primary.data.layout(), spacer, primary.specials.layout(), width=160
 )
 inputs_right = column(
     primary.xaxis.layout([primary.yaxis.widget]),
