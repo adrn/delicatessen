@@ -96,7 +96,7 @@ p {
     content: "  ";
 }
 
-.sides, .build-your-own, .specials, .data{
+.sides, .build-your-own, .specials, .tools, .data{
     border: 1px solid #dddddd !important;
     border-radius: 5px !important;
 }
@@ -117,4 +117,12 @@ p {
 .controls-footer a:link, a:visited, a:hover, a:focus, a:active{
     color: #0275d8 !important;
     font-weight: unset;
+}
+
+.tabs .bk-headers-wrapper {
+    border-bottom: 0px !important;
+}
+
+.tabs > .bk {
+    /*background: #eee;*/
 }
