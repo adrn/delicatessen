@@ -6,7 +6,7 @@ from collections import OrderedDict
 import astropy.table as at
 import numpy as np
 from bokeh.io import curdoc
-from bokeh.layouts import column, row
+from bokeh.layouts import column, row, Spacer
 from bokeh.models import (
     ColumnDataSource,
     Div,
@@ -289,14 +289,15 @@ secondary = SecondaryPlot(primary)
 
 
 # Display things on the page
-spacer = Div()
-or_spacer = Div(css_classes=["or-spacer"])
 inputs_left = column(
-    primary.data.layout(), spacer, primary.specials.layout(), width=160
+    primary.data.layout(),
+    Spacer(height=10),
+    primary.specials.layout(),
+    width=160,
 )
 inputs_right = column(
     primary.xaxis.layout([primary.yaxis.widget]),
-    spacer,
+    Spacer(height=10),
     primary.size.layout([primary.color.widget]),
 )
 header = Div(
@@ -307,8 +308,8 @@ header = Div(
     width=320,
     height=100,
 )
-inputs = column(header, row(inputs_left, or_spacer, inputs_right))
-layout = column(row(inputs, spacer, primary.plot), secondary.plot,)
+inputs = column(header, row(inputs_left, Spacer(width=10), inputs_right))
+layout = column(row(inputs, Spacer(width=10), primary.plot), secondary.plot,)
 
 # Load and display the data
 primary.callback(None, None, None)

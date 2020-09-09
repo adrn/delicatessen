@@ -63,9 +63,6 @@ p {
     height: 100%;
 }
 
-.header-image {
-}
-
 .deli-selector {
     padding: 5px !important;
 }
@@ -104,6 +101,10 @@ p {
     border-radius: 5px !important;
 }
 
+.data{
+    background-color: #ff00801c;
+}
+
 .controls{
     font-size: 8pt !important;
 }
@@ -116,26 +117,4 @@ p {
 .controls-footer a:link, a:visited, a:hover, a:focus, a:active{
     color: #0275d8 !important;
     font-weight: unset;
-}
-
-.or-spacer{
-    color: #ff0080;
-    font-weight: 500;
-    font-size: 13pt !important;
-    height: 30px !important; 
-    width: 30px !important;
-    top: 100px !important; 
-    position: relative !important;
-    left: 153px !important;
-    background: #fff !important;
-    border-radius: 50%; 
-    border: 1px solid #ff0080 !important;
-    display:inline-block;
-    margin-top: 5px !important;
-    padding-left: 1px !important;
-    z-index:99;
-}
-
-.or-spacer::after{
-    content: " or"
 }
