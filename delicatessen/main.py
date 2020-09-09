@@ -17,6 +17,8 @@ from bokeh.models import (
     Select,
     MultiSelect,
     Slider,
+    Panel,
+    Tabs,
 )
 from bokeh.plotting import figure
 from bokeh.models.tools import (
@@ -241,27 +243,40 @@ class Plot:
         )
 
     def layout(self):
-        inputs_left = column(
-            self.data.layout(),
-            Spacer(height=10),
-            self.specials.layout(),
-            width=160,
+        panels = [None, None]
+
+        # Main panel: data
+        panels[0] = Panel(
+            child=row(
+                column(
+                    self.data.layout(),
+                    Spacer(height=10),
+                    self.specials.layout(),
+                    width=160,
+                ),
+                Spacer(width=10),
+                column(
+                    self.xaxis.layout([self.yaxis.widget]),
+                    Spacer(height=10),
+                    self.size.layout([self.color.widget]),
+                ),
+            ),
+            title="data",
         )
-        inputs_right = column(
-            self.xaxis.layout([self.yaxis.widget]),
-            Spacer(height=10),
-            self.size.layout([self.color.widget]),
-        )
+
+        # Secondary panel: appearance
+        panels[1] = Panel(child=Div(), title="appearance",)
+
+        tabs = Tabs(tabs=panels)
+
         header = Div(
             text=f"""<img src="{LOGO_URL}"></img>""",
             css_classes=["header-image"],
             width=320,
             height=100,
         )
-        inputs = column(
-            header, row(inputs_left, Spacer(width=10), inputs_right)
-        )
-        return row(inputs, Spacer(width=10), self.plot)
+
+        return row(column(header, tabs), Spacer(width=10), self.plot)
 
 
 class Delicatessen:
