@@ -119,8 +119,12 @@ class Plot:
             name="Datasets",
             kind="datasets",
             css_classes=["data"],
-            entries={"TOI Catalog": "toi", "Confirmed Planets": "confirmed"},
-            default="Confirmed Planets",
+            entries={
+                "Test data": "test",
+                # "TOI Catalog": "toi",
+                # "Confirmed Planets": "confirmed",
+            },
+            default="Test data",
         )
         self.xaxis = Selector(
             name="Build-Your-Own",
