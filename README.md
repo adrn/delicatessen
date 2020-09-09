@@ -5,3 +5,7 @@
 </p>
 
 Serving you all the finest visualizations at online.tess.science
+
+```
+bokeh serve --show delicatessen
+```
