@@ -1,5 +1,6 @@
 # Standard library
 import pathlib
+import sys
 from collections import OrderedDict
 
 # Third-party
@@ -33,15 +34,7 @@ from bokeh.models import Range1d
 from bokeh.palettes import Viridis256
 from bokeh.transform import linear_cmap
 
-PATH = pathlib.Path(__file__).parent.absolute()
-DATA_PATH = PATH / "data" / "TESS-Gaia-mini.csv"
-
-# Load an example dataset - can be any file format that astropy.table can read
-data = at.Table.read(DATA_PATH)
-dataset = data.to_pandas()
-
-# Things the user can plot (label: parameter name)
-parameters = OrderedDict((col, col) for col in sorted(dataset.columns))
+LOGO_URL = "https://raw.githubusercontent.com/adrn/delicatessen/master/deli_logo_med_res.gif"
 
 
 class Selector:
@@ -100,7 +93,7 @@ class Selector:
 
 
 class PrimaryPlot:
-    def __init__(self, dataset):
+    def __init__(self, dataset, parameters):
 
         self.dataset = dataset
 
@@ -283,37 +276,62 @@ class SecondaryPlot:
             self.source.data = dict(x=[], y=[])
 
 
-# Instantiate the plots
-primary = PrimaryPlot(dataset)
-secondary = SecondaryPlot(primary)
+class Delicatessen:
+
+    def __init__(self, data_file=None):
+
+        # This is to have a default / test data file to show. But we probably
+        # want to change this, or remove the default when we "release"!
+        if data_file is None:
+            deli_path = pathlib.Path(__file__).parent.absolute()
+            data_file = deli_path / 'data' / 'TESS-Gaia-mini.csv'
+
+        # The data file can be any file format that astropy.table can read:
+        data = at.Table.read(data_file)
+        dataset = data.to_pandas()
+
+        # Things the user can plot - now the labels are the same as the table
+        # column names! We may want to make these nicer for things like "ra"?
+        parameters = OrderedDict((col, col) for col in sorted(dataset.columns))
+
+        self.dataset = dataset
+
+        # Instantiate the plots
+        self.primary = PrimaryPlot(dataset, parameters)
+        self.secondary = SecondaryPlot(self.primary)
+
+        # Display things on the page
+        inputs_left = column(
+            self.primary.data.layout(),
+            Spacer(height=10),
+            self.primary.specials.layout(),
+            width=160,
+        )
+        inputs_right = column(
+            self.primary.xaxis.layout([self.primary.yaxis.widget]),
+            Spacer(height=10),
+            self.primary.size.layout([self.primary.color.widget]),
+        )
+        header = Div(
+            text=f"""<img src="{LOGO_URL}"></img>""",
+            css_classes=["header-image"],
+            width=320,
+            height=100,
+        )
+        inputs = column(header,
+                        row(inputs_left, Spacer(width=10), inputs_right))
+        layout = column(row(inputs, Spacer(width=10), self.primary.plot),
+                        self.secondary.plot,)
+
+        # Load and display the data
+        self.primary.callback(None, None, None)
+
+        # Go!
+        curdoc().add_root(layout)
+        curdoc().title = "delicatessen"
 
 
-# Display things on the page
-inputs_left = column(
-    primary.data.layout(),
-    Spacer(height=10),
-    primary.specials.layout(),
-    width=160,
-)
-inputs_right = column(
-    primary.xaxis.layout([primary.yaxis.widget]),
-    Spacer(height=10),
-    primary.size.layout([primary.color.widget]),
-)
-header = Div(
-    text="""
-<img src="https://raw.githubusercontent.com/adrn/delicatessen/master/deli_logo_med_res.gif"></img>
-""",
-    css_classes=["header-image"],
-    width=320,
-    height=100,
-)
-inputs = column(header, row(inputs_left, Spacer(width=10), inputs_right))
-layout = column(row(inputs, Spacer(width=10), primary.plot), secondary.plot,)
-
-# Load and display the data
-primary.callback(None, None, None)
-
-# Go!
-curdoc().add_root(layout)
-curdoc().title = "delicatessen"
+data_file = None
+if len(sys.argv) > 1:
+    data_file = sys.argv[1]
+deli = Delicatessen(data_file)
