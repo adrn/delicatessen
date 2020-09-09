@@ -62,10 +62,11 @@ class Selector:
         options = sorted(entries.keys())
         if none_allowed:
             options += ["None"]
-        self.widget = Select(
+        self.widget = MultiSelect(
             options=options,
-            value=default,
-            height=150,
+            value=[default],
+            # height=150,
+            size=8,
             name="deli-selector",
             title=title,
             css_classes=["deli-selector"],
@@ -73,7 +74,8 @@ class Selector:
 
     @property
     def value(self):
-        return self.widget.value
+        # HACK: This is because we are useing MultiSelect instead of Select
+        return self.widget.value[0]
 
     def layout(self, additional_widgets=[], width=None):
         title = Div(
@@ -234,6 +236,7 @@ class Plot:
             )
         else:
             size = np.ones_like(self.dataset["ticid"]) * 5
+
         if self.color.value != "None":
             c_name = self.color.entries[self.color.value]
             color = (self.dataset[c_name] - np.min(self.dataset[c_name])) / (
@@ -322,12 +325,6 @@ class Delicatessen:
         self.secondary = tool(self)
         self.layout.children.pop()
         self.layout.children.append(self.secondary.layout())
-
-        # SUPER HACK: Trigger the `fixSelectors()` function
-        # since their sizes get reset whenever the layout changes
-        cr = self.primary.plot.circle(x=[], y=[])
-        cr.glyph.js_on_change("size", CustomJS(code="fixSelectors();"))
-        cr.glyph.size += 1
 
 
 data_file = None
