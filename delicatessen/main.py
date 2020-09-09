@@ -72,6 +72,12 @@ class Selector:
             css_classes=["deli-selector"],
         )
 
+        # HACK: force MultiSelect to only have 1 value selected
+        def multi_select_hack(attr, old, new):
+            if len(new) > 1:
+                self.widget.value = old
+        self.widget.on_change('value', multi_select_hack)
+
     @property
     def value(self):
         # HACK: This is because we are useing MultiSelect instead of Select
