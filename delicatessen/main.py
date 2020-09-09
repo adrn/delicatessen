@@ -1,3 +1,6 @@
+# delicatessen
+from . import tools
+
 # Standard library
 import pathlib
 import sys
@@ -19,6 +22,8 @@ from bokeh.models import (
     MultiSelect,
     Slider,
     CheckboxGroup,
+    Panel,
+    Tabs,
     CustomJS,
 )
 from bokeh.plotting import figure
@@ -93,36 +98,40 @@ class Selector:
                 self.widget,
                 *additional_widgets,
                 width=width,
-                css_classes=["controls"]
+                css_classes=["controls"],
             ),
             footer,
             css_classes=self.css_classes,
         )
 
 
-class PrimaryPlot:
-    def __init__(self, dataset, parameters):
+class Plot:
+    def __init__(self, parent, dataset, parameters):
 
+        self.parent = parent
         self.dataset = dataset
 
         # Set up the controls
-        self.specials = Selector(
-            name="Specials",
-            kind="specials",
-            css_classes=["specials"],
+        self.tools = Selector(
+            name="Tools",
+            kind="tools",
+            css_classes=["tools"],
             entries={
-                "Color-magnitude diagram": "cmd",
-                "Period vs. radius": "pr",
-                "Period vs. transit duration": "pdt",
+                "None": tools.BaseTool,
+                "Show Light Curve": tools.ShowLightCurve,
             },
-            default="Color-magnitude diagram",
+            default="None",
         )
         self.data = Selector(
             name="Datasets",
             kind="datasets",
             css_classes=["data"],
-            entries={"TOI Catalog": "toi", "Confirmed Planets": "confirmed"},
-            default="Confirmed Planets",
+            entries={
+                "Test data": "test",
+                # "TOI Catalog": "toi",
+                # "Confirmed Planets": "confirmed",
+            },
+            default="Test data",
         )
         self.xaxis = Selector(
             name="Build-Your-Own",
@@ -136,7 +145,7 @@ class PrimaryPlot:
             kind="parameters",
             css_classes=["build-your-own"],
             entries=parameters,
-            default="dec",
+            default="dist",
             title="Y Axis",
         )
         self.size = Selector(
@@ -144,7 +153,7 @@ class PrimaryPlot:
             kind="parameters",
             css_classes=["sides"],
             entries=parameters,
-            default="st_tmag",
+            default="None",
             title="Marker Size",
             none_allowed=True,
         )
@@ -152,44 +161,53 @@ class PrimaryPlot:
             kind="parameters",
             css_classes=["sides"],
             entries=parameters,
-            default="st_teff",
+            default="None",
             title="Marker Color",
             none_allowed=True,
         )
-        self.checkbox_labels = ["Invert x-axis", "Flip y-axis ", "Log scale x-axis", "Log scale y-axis"]
-        
-        self.checkbox_group = CheckboxGroup(labels=self.checkbox_labels, active=[])
+        self.checkbox_labels = [
+            "Flip x-axis",
+            "Flip y-axis ",
+            "Log scale x-axis",
+            "Log scale y-axis",
+        ]
+
+        self.checkbox_group = CheckboxGroup(
+            labels=self.checkbox_labels, active=[]
+        )
 
         self.source = ColumnDataSource(
             data=dict(x=[], y=[], size=[], color=[])
         )
 
-        # Register the callback
-        for control in [
-            self.specials,
-            self.data,
-            self.xaxis,
-            self.yaxis,
-            self.size,
-            self.color,
-        ]:
-            control.widget.on_change("value", self.callback)
-
+        # Register the callbacks
+        for control in [self.xaxis, self.yaxis, self.size, self.color]:
+            control.widget.on_change("value", self.param_callback)
+        self.tools.widget.on_change("value", self.tool_callback)
+        self.data.widget.on_change("value", self.data_callback)
         self.checkbox_group.on_click(self.checkbox_callback)
 
+        # Setup the plot
         self.setup_plot()
 
-    def setup_plot(self, x_axis_type='linear', y_axis_type='linear'):
+        # Load and display the data
+        self.param_callback(None, None, None)
+
+    def setup_plot(self, x_axis_type="linear", y_axis_type="linear", x_flip=False, y_flip=False):
         # Set up the plot
         self.plot = figure(
             plot_height=600,
             plot_width=700,
             title="",
-            tooltips=[("TIC ID", "@tid")],
+            tooltips=[("TIC ID", "@ticid")],
             sizing_mode="scale_both",
             x_axis_type=x_axis_type,
             y_axis_type=y_axis_type,
         )
+
+        self.plot.x_range.flipped = x_flip
+        self.plot.y_range.flipped = y_flip
+
         self.plot.circle(
             x="x",
             y="y",
@@ -214,12 +232,22 @@ class PrimaryPlot:
             HoverTool(),
             CrosshairTool(),
             ResetTool(),
-        ) 
+        )
+        # HACKZ
         if hasattr(self.parent, "layout"):
-            self.parent.layout.children[0].children[-1] = self.plot       
+            self.parent.layout.children[0].children[-1] = self.plot
+        cr = self.plot.circle(x=[], y=[])
+        cr.glyph.js_on_change("size", CustomJS(code="fixSelectors();"))
+        cr.glyph.size += 1
 
+    def tool_callback(self, attr, old, new):
+        self.parent.change_tool(self.tools.entries[self.tools.value])
 
-    def callback(self, attr, old, new):
+    def data_callback(self, attr, old, new):
+        # TODO: Change datasets!
+        pass
+
+    def param_callback(self, attr, old, new):
         """
         Triggered when the user changes what we're plotting on the main plot.
 
@@ -233,119 +261,108 @@ class PrimaryPlot:
         # Update the "sides"
         if self.size.value != "None":
             s_name = self.size.entries[self.size.value]
-            size = self.dataset[s_name] / np.min(self.dataset[s_name])
+            size = (
+                25
+                * (self.dataset[s_name] - np.min(self.dataset[s_name]))
+                / (np.max(self.dataset[s_name]) - np.min(self.dataset[s_name]))
+            )
         else:
-            size = np.ones_like(self.dataset["tid"]) * 5
+            size = np.ones_like(self.dataset["ticid"]) * 5
         if self.color.value != "None":
             c_name = self.color.entries[self.color.value]
             color = (self.dataset[c_name] - np.min(self.dataset[c_name])) / (
                 np.max(self.dataset[c_name]) - np.min(self.dataset[c_name])
             )
         else:
-            color = np.zeros_like(self.dataset["tid"])
+            color = np.zeros_like(self.dataset["ticid"])
 
         # Update the data source
         self.source.data = dict(
             x=self.dataset[x_name],
             y=self.dataset[y_name],
             size=size,
-            ticid=self.dataset["tid"],
+            ticid=self.dataset["ticid"],
             color=color,
         )
 
     def checkbox_callback(self, new):
         """
-        Triggered when the user changes what we're plotting on the main plot.
-
-        """      
-
-        if 0 in self.checkbox_group.active:
-            print('flip x')
-        if 1 in self.checkbox_group.active:
-            print('flip y')
-        if 2 in self.checkbox_group.active:
-            print('log x')
-            self.setup_plot(x_axis_type="log")
-        else:
-            self.setup_plot()
-        if 3 in self.checkbox_group.active:
-            #print('log y')
-            self.setup_plot(y_axis_type="log")
-        else:
-            self.setup_plot()
-
-
+        Triggered when the user interacts with check boxes in appearance panel.
         
-        #print(self.checkbox_group.active)        
-
-
-class SecondaryPlot:
-    def __init__(self, primary_plot):
-        self.primary_plot = primary_plot
-        self.source = ColumnDataSource(data=dict(x=[], y=[]))
-        self.plot = figure(
-            plot_height=300, plot_width=700, title="", sizing_mode="scale_both"
-        )
-        self.plot.circle(
-            x="x",
-            y="y",
-            source=self.source,
-            line_color=None,
-            color="black",
-            alpha=0.1,
-        )
-
-        # Register the callback
-        self.primary_plot.source.selected.on_change("indices", self.callback)
-
-    def callback(self, attr, old, new):
         """
-        Triggered when the user selects a point on the main plot.
-
-        """
-        # If a point is selected...
-        if len(self.primary_plot.source.selected.indices):
-
-            # Get the TIC ID
-            ticid = self.primary_plot.source.data["tid"][
-                self.primary_plot.source.selected.indices[0]
-            ]
-            print("Fetching data for TIC ID {0}".format(ticid))
-
-            # TODO: Actually fetch the data from MAST.
-            # For now just populate with random numbers
-            self.source.data = dict(
-                x=np.linspace(0, 1, 10000), y=np.random.randn(10000)
-            )
-
+        if 0 in self.checkbox_group.active:
+            x_flip = True
         else:
+            x_flip = False
+        if 1 in self.checkbox_group.active:
+            y_flip = True
+        else:
+            y_flip = False
+        if 2 in self.checkbox_group.active:
+            x_axis_type="log"
+        else:
+            x_axis_type="linear"
+        if 3 in self.checkbox_group.active:
+            y_axis_type="log"
+        else:
+            y_axis_type="linear"
 
-            # Clear the plot
-            self.source.data = dict(x=[], y=[])
+        #Axis labels are disappearing on selection of checkboxes
+        self.setup_plot(x_axis_type=x_axis_type,
+                        y_axis_type=y_axis_type,
+                        x_flip=x_flip,
+                        y_flip=y_flip)
+
+    
+    def layout(self):
+        panels = [None, None]
+
+        # Main panel: data
+        panels[0] = Panel(
+            child=row(
+                column(
+                    self.data.layout(),
+                    Spacer(height=10),
+                    self.tools.layout(),
+                    width=160,
+                ),
+                Spacer(width=10),
+                column(
+                    self.xaxis.layout([self.yaxis.widget]),
+                    Spacer(height=10),
+                    self.size.layout([self.color.widget]),
+                ),
+            ),
+            title="data",
+        )
+
+        # Secondary panel: appearance
+        panels[1] = Panel(child=self.checkbox_group, title="appearance",)
+
+        tabs = Tabs(tabs=panels, css_classes=["tabs"])
+
+        header = Div(
+            text=f"""<img src="{LOGO_URL}"></img>""",
+            css_classes=["header-image"],
+            width=320,
+            height=100,
+        )
+
+        return row(column(header, tabs), Spacer(width=10), self.plot)
 
 
 class Delicatessen:
-
     def __init__(self, data_file=None):
 
         # This is to have a default / test data file to show. But we probably
         # want to change this, or remove the default when we "release"!
         if data_file is None:
             deli_path = pathlib.Path(__file__).parent.absolute()
-            data_file = deli_path / 'data' / 'TESS-Gaia-mini.csv'
+            data_file = deli_path / "data" / "TESS-Gaia-mini.csv"
 
         # The data file can be any file format that astropy.table can read:
-        #data = at.Table.read(data_file)
-        #dataset = data.to_pandas()
-
-        # This needs to be cleaned up        
-        catalog_name = "toi" #or "exoplanets" for all confirmed exoplanets
-        catalog_url  = ("http://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/"
-            "nph-nstedAPI?table={0}&select=*").format(catalog_name)
-
-        r = requests.get(catalog_url) 
-        fh = BytesIO(r.content)
-        dataset = pd.read_csv(fh)
+        data = at.Table.read(data_file)
+        dataset = data.to_pandas()
 
         # Things the user can plot - now the labels are the same as the table
         # column names! We may want to make these nicer for things like "ra"?
@@ -353,39 +370,27 @@ class Delicatessen:
 
         self.dataset = dataset
 
-        # Instantiate the plots
-        self.primary = PrimaryPlot(dataset, parameters)
-        self.secondary = SecondaryPlot(self.primary)
+        # Instantiate the plot
+        self.primary = Plot(self, dataset, parameters)
+        self.layout = column(self.primary.layout(), Div())
 
-        # Display things on the page
-        inputs_left = column(
-            self.primary.data.layout(),
-            Spacer(height=10),
-            self.primary.specials.layout(),
-            width=160,
-        )
-        inputs_right = column(
-            self.primary.xaxis.layout([self.primary.yaxis.widget]),
-            Spacer(height=10),
-            self.primary.size.layout([self.primary.color.widget]),
-        )
-        header = Div(
-            text=f"""<img src="{LOGO_URL}"></img>""",
-            css_classes=["header-image"],
-            width=320,
-            height=100,
-        )
-        inputs = column(header,
-                        row(inputs_left, Spacer(width=10), inputs_right))
-        layout = column(row(inputs, Spacer(width=10), self.primary.plot, self.primary.checkbox_group),
-                        self.secondary.plot,)
-
-        # Load and display the data
-        self.primary.callback(None, None, None)
+        # Set up the tool (none by default)
+        self.change_tool(tools.BaseTool)
 
         # Go!
-        curdoc().add_root(layout)
+        curdoc().add_root(self.layout)
         curdoc().title = "delicatessen"
+
+    def change_tool(self, tool):
+        self.secondary = tool(self)
+        self.layout.children.pop()
+        self.layout.children.append(self.secondary.layout())
+
+        # SUPER HACK: Trigger the `fixSelectors()` function
+        # since their sizes get reset whenever the layout changes
+        cr = self.primary.plot.circle(x=[], y=[])
+        cr.glyph.js_on_change("size", CustomJS(code="fixSelectors();"))
+        cr.glyph.size += 1
 
 
 data_file = None
