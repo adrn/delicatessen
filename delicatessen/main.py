@@ -29,6 +29,7 @@ from bokeh.models.tools import (
     ZoomOutTool,
     HoverTool,
     CrosshairTool,
+    ResetTool,
 )
 from bokeh.models import Range1d
 from bokeh.palettes import Viridis256
@@ -183,6 +184,7 @@ class PrimaryPlot:
             ZoomOutTool(),
             HoverTool(),
             CrosshairTool(),
+            ResetTool(),
         )
 
         # Register the callback
