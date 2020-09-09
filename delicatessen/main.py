@@ -1,3 +1,6 @@
+# delicatessen
+from . import modules
+
 # Standard library
 import pathlib
 import sys
@@ -14,6 +17,8 @@ from bokeh.models import (
     Select,
     MultiSelect,
     Slider,
+    Panel,
+    Tabs,
 )
 from bokeh.plotting import figure
 from bokeh.models.tools import (
@@ -86,14 +91,14 @@ class Selector:
                 self.widget,
                 *additional_widgets,
                 width=width,
-                css_classes=["controls"]
+                css_classes=["controls"],
             ),
             footer,
             css_classes=self.css_classes,
         )
 
 
-class PrimaryPlot:
+class Plot:
     def __init__(self, dataset, parameters):
 
         self.dataset = dataset
@@ -198,6 +203,9 @@ class PrimaryPlot:
         ]:
             control.widget.on_change("value", self.callback)
 
+        # Load and display the data
+        self.callback(None, None, None)
+
     def callback(self, attr, old, new):
         """
         Triggered when the user changes what we're plotting on the main plot.
@@ -212,7 +220,11 @@ class PrimaryPlot:
         # Update the "sides"
         if self.size.value != "None":
             s_name = self.size.entries[self.size.value]
-            size = self.dataset[s_name] / np.min(self.dataset[s_name])
+            size = (
+                25
+                * (self.dataset[s_name] - np.min(self.dataset[s_name]))
+                / (np.max(self.dataset[s_name]) - np.min(self.dataset[s_name]))
+            )
         else:
             size = np.ones_like(self.dataset["ticid"]) * 5
         if self.color.value != "None":
@@ -232,61 +244,51 @@ class PrimaryPlot:
             color=color,
         )
 
+    def layout(self):
+        panels = [None, None]
 
-class SecondaryPlot:
-    def __init__(self, primary_plot):
-        self.primary_plot = primary_plot
-        self.source = ColumnDataSource(data=dict(x=[], y=[]))
-        self.plot = figure(
-            plot_height=300, plot_width=700, title="", sizing_mode="scale_both"
+        # Main panel: data
+        panels[0] = Panel(
+            child=row(
+                column(
+                    self.data.layout(),
+                    Spacer(height=10),
+                    self.specials.layout(),
+                    width=160,
+                ),
+                Spacer(width=10),
+                column(
+                    self.xaxis.layout([self.yaxis.widget]),
+                    Spacer(height=10),
+                    self.size.layout([self.color.widget]),
+                ),
+            ),
+            title="data",
         )
-        self.plot.circle(
-            x="x",
-            y="y",
-            source=self.source,
-            line_color=None,
-            color="black",
-            alpha=0.1,
+
+        # Secondary panel: appearance
+        panels[1] = Panel(child=Div(), title="appearance",)
+
+        tabs = Tabs(tabs=panels)
+
+        header = Div(
+            text=f"""<img src="{LOGO_URL}"></img>""",
+            css_classes=["header-image"],
+            width=320,
+            height=100,
         )
 
-        # Register the callback
-        self.primary_plot.source.selected.on_change("indices", self.callback)
-
-    def callback(self, attr, old, new):
-        """
-        Triggered when the user selects a point on the main plot.
-
-        """
-        # If a point is selected...
-        if len(self.primary_plot.source.selected.indices):
-
-            # Get the TIC ID
-            ticid = self.primary_plot.source.data["ticid"][
-                self.primary_plot.source.selected.indices[0]
-            ]
-            print("Fetching data for TIC ID {0}".format(ticid))
-
-            # TODO: Actually fetch the data from MAST.
-            # For now just populate with random numbers
-            self.source.data = dict(
-                x=np.linspace(0, 1, 10000), y=np.random.randn(10000)
-            )
-
-        else:
-
-            # Clear the plot
-            self.source.data = dict(x=[], y=[])
+        return row(column(header, tabs), Spacer(width=10), self.plot)
 
 
 class Delicatessen:
-
     def __init__(self, data_file=None):
 
         # This is to have a default / test data file to show. But we probably
         # want to change this, or remove the default when we "release"!
         if data_file is None:
             deli_path = pathlib.Path(__file__).parent.absolute()
-            data_file = deli_path / 'data' / 'TESS-Gaia-mini.csv'
+            data_file = deli_path / "data" / "TESS-Gaia-mini.csv"
 
         # The data file can be any file format that astropy.table can read:
         data = at.Table.read(data_file)
@@ -299,34 +301,11 @@ class Delicatessen:
         self.dataset = dataset
 
         # Instantiate the plots
-        self.primary = PrimaryPlot(dataset, parameters)
-        self.secondary = SecondaryPlot(self.primary)
+        self.primary = Plot(dataset, parameters)
+        self.secondary = modules.TESSGaiaMini.Plot(self.primary)
 
         # Display things on the page
-        inputs_left = column(
-            self.primary.data.layout(),
-            Spacer(height=10),
-            self.primary.specials.layout(),
-            width=160,
-        )
-        inputs_right = column(
-            self.primary.xaxis.layout([self.primary.yaxis.widget]),
-            Spacer(height=10),
-            self.primary.size.layout([self.primary.color.widget]),
-        )
-        header = Div(
-            text=f"""<img src="{LOGO_URL}"></img>""",
-            css_classes=["header-image"],
-            width=320,
-            height=100,
-        )
-        inputs = column(header,
-                        row(inputs_left, Spacer(width=10), inputs_right))
-        layout = column(row(inputs, Spacer(width=10), self.primary.plot),
-                        self.secondary.plot,)
-
-        # Load and display the data
-        self.primary.callback(None, None, None)
+        layout = column(self.primary.layout(), self.secondary.layout())
 
         # Go!
         curdoc().add_root(layout)
