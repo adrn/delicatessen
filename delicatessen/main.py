@@ -1,3 +1,9 @@
+# Standard library
+import pathlib
+from collections import OrderedDict
+
+# Third-party
+import astropy.table as at
 import numpy as np
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
@@ -26,23 +32,16 @@ from bokeh.models.tools import (
 from bokeh.models.callbacks import CustomJS
 from bokeh.palettes import Viridis256
 from bokeh.transform import linear_cmap
-import os
 
-PATH = os.path.abspath(os.path.dirname(__file__))
+PATH = pathlib.Path(__file__).parent.absolute()
+DATA_PATH = PATH / 'data' / 'TESS-Gaia-mini.csv'
 
-# Load an example dataset
-data = np.loadtxt(
-    os.path.join(PATH, "data", "TESS-Gaia-mini.csv"), delimiter=",", skiprows=1
-)
-ra, dec, par, sid, _, _, ticid, tmag, dist = data.T
-dataset = dict(ra=ra, dec=dec, dist=dist, ticid=ticid)
+# Load an example dataset - can be any file format that astropy.table can read
+data = at.Table.read(DATA_PATH)
+dataset = data.to_pandas()
 
 # Things the user can plot (label: parameter name)
-parameters = {
-    "Right Ascension": "ra",
-    "Declination": "dec",
-    "Distance": "dist",
-}
+parameters = OrderedDict((col, col) for col in sorted(dataset.columns))
 
 
 class Selector:
@@ -129,7 +128,7 @@ class PrimaryPlot:
             kind="parameters",
             css_classes=["build-your-own"],
             entries=parameters,
-            default="Right Ascension",
+            default="ra",
             title="X Axis",
         )
         self.yaxis = Selector(
@@ -137,7 +136,7 @@ class PrimaryPlot:
             kind="parameters",
             css_classes=["build-your-own"],
             entries=parameters,
-            default="Declination",
+            default="dec",
             title="Y Axis",
         )
         self.size = Selector(
@@ -145,7 +144,7 @@ class PrimaryPlot:
             kind="parameters",
             css_classes=["sides"],
             entries=parameters,
-            default="Distance",
+            default="dist",
             title="Marker Size",
             none_allowed=True,
         )
@@ -154,7 +153,7 @@ class PrimaryPlot:
             kind="parameters",
             css_classes=["sides"],
             entries=parameters,
-            default="Distance",
+            default="dist",
             title="Marker Color",
             none_allowed=True,
         )
