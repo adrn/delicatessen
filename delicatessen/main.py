@@ -45,7 +45,7 @@ parameters = {
 }
 
 
-class Selector(object):
+class Selector:
     def __init__(
         self,
         name="Specials",
@@ -100,7 +100,7 @@ class Selector(object):
         )
 
 
-class PrimaryPlot(object):
+class PrimaryPlot:
     def __init__(self, dataset):
 
         self.dataset = dataset
@@ -241,7 +241,7 @@ class PrimaryPlot(object):
         )
 
 
-class SecondaryPlot(object):
+class SecondaryPlot:
     def __init__(self, primary_plot):
         self.primary_plot = primary_plot
         self.source = ColumnDataSource(data=dict(x=[], y=[]))
