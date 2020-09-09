@@ -216,7 +216,11 @@ class Plot:
         # Update the "sides"
         if self.size.value != "None":
             s_name = self.size.entries[self.size.value]
-            size = self.dataset[s_name] / np.min(self.dataset[s_name])
+            size = (
+                25
+                * (self.dataset[s_name] - np.min(self.dataset[s_name]))
+                / (np.max(self.dataset[s_name]) - np.min(self.dataset[s_name]))
+            )
         else:
             size = np.ones_like(self.dataset["ticid"]) * 5
         if self.color.value != "None":
