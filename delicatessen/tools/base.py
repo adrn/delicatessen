@@ -4,7 +4,7 @@ from bokeh.models import ColumnDataSource, Div
 from bokeh.plotting import figure
 
 
-class BasePlot:
+class BaseTool:
     def __init__(self, primary_plot):
         self.primary_plot = primary_plot
 

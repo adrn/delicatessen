@@ -1,5 +1,5 @@
 # delicatessen
-from .base import BasePlot
+from .base import BaseTool
 
 # Third-party
 import numpy as np
@@ -7,9 +7,9 @@ from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 
 
-class Plot(BasePlot):
-    def __init__(self, primary_plot):
-        self.primary_plot = primary_plot
+class ShowLightCurve(BaseTool):
+    def __init__(self, parent):
+        self.parent = parent
         self.source = ColumnDataSource(data=dict(x=[], y=[]))
         self.plot = figure(
             plot_height=300, plot_width=700, title="", sizing_mode="scale_both"
@@ -24,7 +24,7 @@ class Plot(BasePlot):
         )
 
         # Register the callback
-        self.primary_plot.source.selected.on_change("indices", self.callback)
+        self.parent.primary.source.selected.on_change("indices", self.callback)
 
     def callback(self, attr, old, new):
         """
@@ -32,11 +32,11 @@ class Plot(BasePlot):
 
         """
         # If a point is selected...
-        if len(self.primary_plot.source.selected.indices):
+        if len(self.parent.primary.source.selected.indices):
 
             # Get the TIC ID
-            ticid = self.primary_plot.source.data["ticid"][
-                self.primary_plot.source.selected.indices[0]
+            ticid = self.parent.primary.source.data["ticid"][
+                self.parent.primary.source.selected.indices[0]
             ]
             print("Fetching data for TIC ID {0}".format(ticid))
 

@@ -1,5 +1,5 @@
 # delicatessen
-from . import modules
+from . import tools
 
 # Standard library
 import pathlib
@@ -19,6 +19,7 @@ from bokeh.models import (
     Slider,
     Panel,
     Tabs,
+    CustomJS,
 )
 from bokeh.plotting import figure
 from bokeh.models.tools import (
@@ -99,28 +100,32 @@ class Selector:
 
 
 class Plot:
-    def __init__(self, dataset, parameters):
+    def __init__(self, parent, dataset, parameters):
 
+        self.parent = parent
         self.dataset = dataset
 
         # Set up the controls
-        self.specials = Selector(
-            name="Specials",
-            kind="specials",
-            css_classes=["specials"],
+        self.tools = Selector(
+            name="Tools",
+            kind="tools",
+            css_classes=["tools"],
             entries={
-                "Color-magnitude diagram": "cmd",
-                "Period vs. radius": "pr",
-                "Period vs. transit duration": "pdt",
+                "None": tools.BaseTool,
+                "Show Light Curve": tools.ShowLightCurve,
             },
-            default="Color-magnitude diagram",
+            default="None",
         )
         self.data = Selector(
             name="Datasets",
             kind="datasets",
             css_classes=["data"],
-            entries={"TOI Catalog": "toi", "Confirmed Planets": "confirmed"},
-            default="Confirmed Planets",
+            entries={
+                "Test data": "test",
+                # "TOI Catalog": "toi",
+                # "Confirmed Planets": "confirmed",
+            },
+            default="Test data",
         )
         self.xaxis = Selector(
             name="Build-Your-Own",
@@ -192,21 +197,23 @@ class Plot:
             ResetTool(),
         )
 
-        # Register the callback
-        for control in [
-            self.specials,
-            self.data,
-            self.xaxis,
-            self.yaxis,
-            self.size,
-            self.color,
-        ]:
-            control.widget.on_change("value", self.callback)
+        # Register the callbacks
+        for control in [self.xaxis, self.yaxis, self.size, self.color]:
+            control.widget.on_change("value", self.param_callback)
+        self.tools.widget.on_change("value", self.tool_callback)
+        self.data.widget.on_change("value", self.data_callback)
 
         # Load and display the data
-        self.callback(None, None, None)
+        self.param_callback(None, None, None)
 
-    def callback(self, attr, old, new):
+    def tool_callback(self, attr, old, new):
+        self.parent.change_tool(self.tools.entries[self.tools.value])
+
+    def data_callback(self, attr, old, new):
+        # TODO: Change datasets!
+        pass
+
+    def param_callback(self, attr, old, new):
         """
         Triggered when the user changes what we're plotting on the main plot.
 
@@ -253,7 +260,7 @@ class Plot:
                 column(
                     self.data.layout(),
                     Spacer(height=10),
-                    self.specials.layout(),
+                    self.tools.layout(),
                     width=160,
                 ),
                 Spacer(width=10),
@@ -269,7 +276,7 @@ class Plot:
         # Secondary panel: appearance
         panels[1] = Panel(child=Div(), title="appearance",)
 
-        tabs = Tabs(tabs=panels)
+        tabs = Tabs(tabs=panels, css_classes=["tabs"])
 
         header = Div(
             text=f"""<img src="{LOGO_URL}"></img>""",
@@ -300,16 +307,27 @@ class Delicatessen:
 
         self.dataset = dataset
 
-        # Instantiate the plots
-        self.primary = Plot(dataset, parameters)
-        self.secondary = modules.TESSGaiaMini.Plot(self.primary)
+        # Instantiate the plot
+        self.primary = Plot(self, dataset, parameters)
+        self.layout = column(self.primary.layout(), Div())
 
-        # Display things on the page
-        layout = column(self.primary.layout(), self.secondary.layout())
+        # Set up the tool (none by default)
+        self.change_tool(tools.BaseTool)
 
         # Go!
-        curdoc().add_root(layout)
+        curdoc().add_root(self.layout)
         curdoc().title = "delicatessen"
+
+    def change_tool(self, tool):
+        self.secondary = tool(self)
+        self.layout.children.pop()
+        self.layout.children.append(self.secondary.layout())
+
+        # SUPER HACK: Trigger the `fixSelectors()` function
+        # since their sizes get reset whenever the layout changes
+        cr = self.primary.plot.circle(x=[], y=[])
+        cr.glyph.js_on_change("size", CustomJS(code="fixSelectors();"))
+        cr.glyph.size += 1
 
 
 data_file = None
