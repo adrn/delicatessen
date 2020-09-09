@@ -125,7 +125,7 @@ class PrimaryPlot(object):
             default="Confirmed Planets",
         )
         self.xaxis = Selector(
-            name="X Axis",
+            name="Build-Your-Own",
             kind="parameters",
             css_classes=["build-your-own"],
             entries=parameters,
@@ -168,7 +168,6 @@ class PrimaryPlot(object):
             plot_width=700,
             title="",
             tooltips=[("TIC ID", "@ticid")],
-            toolbar_location="below",
             sizing_mode="scale_both",
         )
         self.plot.circle(

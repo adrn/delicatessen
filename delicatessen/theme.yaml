@@ -1,7 +1,7 @@
 attrs:
   Plot:
-    outline_line_color: null
-    toolbar_location: null
+    outline_line_color: '#9f9f9f'
+    toolbar_location: right
     min_border: 20
 
   Axis:
