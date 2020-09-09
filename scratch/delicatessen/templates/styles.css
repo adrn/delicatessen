@@ -4,7 +4,7 @@ html {
 body {
     min-width: 600px;
     max-width: 900px;
-    width: 75%;
+    width: 100%;
     margin: auto;
 }
 .content {
@@ -18,13 +18,14 @@ h1 {
     text-transform: uppercase;
 }
 h2 {
-    font-size: 14pt;
+    font-size: 10pt;
     line-height: 1 !important;
-    margin: 0.25em 0em !important;
+    margin: 0.25em 5px !important;
 }
 h3 {
-    margin: 0;
-    font-size: 10pt;
+    margin: 0em 5px !important;
+    line-height: 1.2 !important;
+    font-size: 8pt;
     color: #aaaaaa;
 }
 a:link {
@@ -67,6 +68,7 @@ p {
 }
 
 .deli-selector label {
+    font-size: 8pt !important;
     color: #0275d8 !important;
     text-align: center;
     margin-left: auto !important;
@@ -86,7 +88,7 @@ p {
     to update the url to this image
     if the app changes location.
     */
-    background: #1e90ff repeat url("https://raw.githubusercontent.com/adrn/delicatessen/master/scratch/delicatessen/templates/cool-blue.png");
+    background: #b3d7ff repeat url("https://raw.githubusercontent.com/adrn/delicatessen/master/scratch/delicatessen/templates/cool-blue.png");
 }
 
 
@@ -94,12 +96,43 @@ p {
     content: "  ";
 }
 
-.extras{
+.sides, .build-your-own, .specials, .data{
     border: 1px solid #dddddd !important;
     border-radius: 5px !important;
 }
 
-.build-your-own{
-    border: 1px solid #dddddd !important;
-    border-radius: 5px !important;
+.controls{
+    font-size: 8pt !important;
+}
+
+.controls-footer{
+    color: #0275d8 !important;
+    margin: 0 5px !important;
+}
+
+.controls-footer a:link, a:visited, a:hover, a:focus, a:active{
+    color: #0275d8 !important;
+    font-weight: unset;
+}
+
+.or-spacer{
+    color: #ff0080;
+    font-weight: 500;
+    font-size: 13pt !important;
+    height: 30px !important; 
+    width: 30px !important;
+    top: 100px !important; 
+    position: relative !important;
+    left: 153px !important;
+    background: #fff !important;
+    border-radius: 50%; 
+    border: 1px solid #ff0080 !important;
+    display:inline-block;
+    margin-top: 5px !important;
+    padding-left: 1px !important;
+    z-index:99;
+}
+
+.or-spacer::after{
+    content: " or"
 }

@@ -7,7 +7,6 @@ from bokeh.models import (
     Select,
     MultiSelect,
     Slider,
-    TextInput,
 )
 from bokeh.plotting import figure
 from bokeh.models.tools import TapTool
@@ -23,164 +22,262 @@ data = np.loadtxt(
     os.path.join(PATH, "data", "TESS-Gaia-mini.csv"), delimiter=",", skiprows=1
 )
 ra, dec, par, sid, _, _, ticid, tmag, dist = data.T
-data = dict(ra=ra, dec=dec, dist=dist, ticid=ticid)
+dataset = dict(ra=ra, dec=dec, dist=dist, ticid=ticid)
 
 # Things the user can plot (label: parameter name)
-axis_map = {"Right Ascension": "ra", "Declination": "dec", "Distance": "dist"}
+parameters = {
+    "Right Ascension": "ra",
+    "Declination": "dec",
+    "Distance": "dist",
+}
 
-# Input controls
-x_axis = Select(
-    title="X Axis",
-    options=sorted(axis_map.keys()),
-    value="Right Ascension",
-    height=150,
-    name="deli-selector",
-    css_classes=["deli-selector"],
-)
-y_axis = Select(
-    title="Y Axis",
-    options=sorted(axis_map.keys()),
-    value="Declination",
-    height=150,
-    name="deli-selector",
-    css_classes=["deli-selector"],
-)
-s_axis = Select(
-    title="Marker Size",
-    options=sorted(axis_map.keys()) + ["None"],
-    value="Distance",
-    height=150,
-    name="deli-selector",
-    css_classes=["deli-selector"],
-)
-c_axis = Select(
-    title="Marker Color",
-    options=sorted(axis_map.keys()) + ["None"],
-    value="Distance",
-    height=150,
-    name="deli-selector",
-    css_classes=["deli-selector"],
-)
-controls = [s_axis, c_axis, x_axis, y_axis]
 
-# Primary plot
-source1 = ColumnDataSource(data=dict(x=[], y=[], size=[], color=[]))
-plot1 = figure(
-    plot_height=600,
-    plot_width=700,
-    title="",
-    tooltips=[("TIC ID", "@ticid")],
-    tools="tap",
-    sizing_mode="scale_both",
-)
-plot1.circle(
-    x="x",
-    y="y",
-    source=source1,
-    size="size",
-    color=linear_cmap(field_name="color", palette=Viridis256, low=0, high=1),
-    line_color=None,
-)
-taptool = plot1.select(type=TapTool)
-
-# Secondary plot
-source2 = ColumnDataSource(data=dict(x=[], y=[]))
-plot2 = figure(
-    plot_height=300, plot_width=700, title="", sizing_mode="scale_both",
-)
-plot2.circle(
-    x="x", y="y", source=source2, line_color=None, color="black", alpha=0.1
-)
-
-# Events
-def callback1(attr, old, new):
-    """
-    Triggered when the user changes what we're plotting on the main plot.
-
-    """
-    # Update the axis labels
-    x_name = axis_map[x_axis.value]
-    y_name = axis_map[y_axis.value]
-    plot1.xaxis.axis_label = x_axis.value
-    plot1.yaxis.axis_label = y_axis.value
-
-    # Update the "extras"
-    if s_axis.value != "None":
-        s_name = axis_map[s_axis.value]
-        size = data[s_name] / np.min(data[s_name])
-    else:
-        size = np.ones_like(data["ticid"]) * 5
-    if c_axis.value != "None":
-        c_name = axis_map[c_axis.value]
-        color = (data[c_name] - np.min(data[c_name])) / (
-            np.max(data[c_name]) - np.min(data[c_name])
+class Selector(object):
+    def __init__(
+        self,
+        name="Specials",
+        kind="specials",
+        css_classes=[],
+        entries={},
+        default="",
+        title="",
+        none_allowed=False,
+    ):
+        self.name = name
+        self.entries = entries
+        self.kind = kind
+        self.css_classes = css_classes
+        options = sorted(entries.keys())
+        if none_allowed:
+            options += ["None"]
+        self.widget = Select(
+            options=options,
+            value=default,
+            height=150,
+            name="deli-selector",
+            title=title,
+            css_classes=["deli-selector"],
         )
-    else:
-        color = np.zeros_like(data["ticid"])
 
-    # Update the data source
-    source1.data = dict(
-        x=data[x_name],
-        y=data[y_name],
-        size=size,
-        ticid=data["ticid"],
-        color=color,
-    )
+    @property
+    def value(self):
+        return self.widget.value
+
+    def layout(self, additional_widgets=[], width=None):
+        title = Div(
+            text="""<h2>{0}</h2><h3>Choose one</h3>""".format(self.name),
+            css_classes=["controls"],
+        )
+        footer = Div(
+            text="""<a href="#">About the {0}</a>""".format(self.kind),
+            css_classes=["controls", "controls-footer"],
+        )
+        if width is None:
+            width = 160 * (1 + len(additional_widgets))
+        return column(
+            title,
+            row(
+                self.widget,
+                *additional_widgets,
+                width=width,
+                css_classes=["controls"]
+            ),
+            footer,
+            css_classes=self.css_classes,
+        )
 
 
-def callback2(attr, old, new):
-    """
-    Triggered when the user selects a point on the main plot.
+class PrimaryPlot(object):
+    def __init__(self, dataset):
 
-    """
-    # Get the TIC ID
-    ticid = source1.data["ticid"][source1.selected.indices[0]]
-    print("Fetching data for TIC ID {0}".format(ticid))
+        self.dataset = dataset
 
-    # TODO: Actually fetch the data from MAST.
-    # For now just populate with random numbers
-    source2.data = dict(x=np.arange(10000), y=np.random.randn(10000))
+        # Set up the controls
+        self.specials = Selector(
+            name="Specials",
+            kind="specials",
+            css_classes=["specials"],
+            entries={
+                "Color-magnitude diagram": "cmd",
+                "Period vs. radius": "pr",
+                "Period vs. transit duration": "pdt",
+            },
+            default="Color-magnitude diagram",
+        )
+        self.data = Selector(
+            name="Datasets",
+            kind="datasets",
+            css_classes=["data"],
+            entries={"TOI Catalog": "toi", "Confirmed Planets": "confirmed"},
+            default="Confirmed Planets",
+        )
+        self.xaxis = Selector(
+            name="X Axis",
+            kind="parameters",
+            css_classes=["build-your-own"],
+            entries=parameters,
+            default="Right Ascension",
+            title="X Axis",
+        )
+        self.yaxis = Selector(
+            name="Y Axis",
+            kind="parameters",
+            css_classes=["build-your-own"],
+            entries=parameters,
+            default="Declination",
+            title="Y Axis",
+        )
+        self.size = Selector(
+            name="Marker Size",
+            kind="parameters",
+            css_classes=["sides"],
+            entries=parameters,
+            default="Distance",
+            title="Marker Size",
+            none_allowed=True,
+        )
+        self.color = Selector(
+            name="Marker Color",
+            kind="parameters",
+            css_classes=["sides"],
+            entries=parameters,
+            default="Distance",
+            title="Marker Color",
+            none_allowed=True,
+        )
+
+        # Set up the plot
+        self.source = ColumnDataSource(
+            data=dict(x=[], y=[], size=[], color=[])
+        )
+        self.plot = figure(
+            plot_height=600,
+            plot_width=700,
+            title="",
+            tooltips=[("TIC ID", "@ticid")],
+            tools="tap",
+            sizing_mode="scale_both",
+        )
+        self.plot.circle(
+            x="x",
+            y="y",
+            source=self.source,
+            size="size",
+            color=linear_cmap(
+                field_name="color", palette=Viridis256, low=0, high=1
+            ),
+            line_color=None,
+        )
+        taptool = self.plot.select(type=TapTool)
+
+        # Register the callback
+        for control in [
+            self.specials,
+            self.data,
+            self.xaxis,
+            self.yaxis,
+            self.size,
+            self.color,
+        ]:
+            control.widget.on_change("value", self.callback)
+
+    def callback(self, attr, old, new):
+        """
+        Triggered when the user changes what we're plotting on the main plot.
+
+        """
+        # Update the axis labels
+        x_name = self.xaxis.entries[self.xaxis.value]
+        y_name = self.yaxis.entries[self.yaxis.value]
+        self.plot.xaxis.axis_label = self.xaxis.value
+        self.plot.yaxis.axis_label = self.yaxis.value
+
+        # Update the "sides"
+        if self.size.value != "None":
+            s_name = self.size.entries[self.size.value]
+            size = self.dataset[s_name] / np.min(self.dataset[s_name])
+        else:
+            size = np.ones_like(self.dataset["ticid"]) * 5
+        if self.color.value != "None":
+            c_name = self.color.entries[self.color.value]
+            color = (self.dataset[c_name] - np.min(self.dataset[c_name])) / (
+                np.max(self.dataset[c_name]) - np.min(self.dataset[c_name])
+            )
+        else:
+            color = np.zeros_like(self.dataset["ticid"])
+
+        # Update the data source
+        self.source.data = dict(
+            x=self.dataset[x_name],
+            y=self.dataset[y_name],
+            size=size,
+            ticid=self.dataset["ticid"],
+            color=color,
+        )
 
 
-# Register the callbacks
-source1.selected.on_change("indices", callback2)
-for control in controls:
-    control.on_change("value", callback1)
+class SecondaryPlot(object):
+    def __init__(self, primary_plot):
+        self.primary_plot = primary_plot
+        self.source = ColumnDataSource(data=dict(x=[], y=[]))
+        self.plot = figure(
+            plot_height=300,
+            plot_width=700,
+            title="",
+            sizing_mode="scale_both",
+        )
+        self.plot.circle(
+            x="x",
+            y="y",
+            source=self.source,
+            line_color=None,
+            color="black",
+            alpha=0.1,
+        )
+
+        # Register the callback
+        self.primary_plot.source.selected.on_change("indices", self.callback)
+
+    def callback(self, attr, old, new):
+        """
+        Triggered when the user selects a point on the main plot.
+
+        """
+        # Get the TIC ID
+        ticid = self.primary_plot.source.data["ticid"][
+            self.primary_plot.source.selected.indices[0]
+        ]
+        print("Fetching data for TIC ID {0}".format(ticid))
+
+        # TODO: Actually fetch the data from MAST.
+        # For now just populate with random numbers
+        self.source.data = dict(x=np.arange(10000), y=np.random.randn(10000))
+
+
+# Instantiate the plots
+primary = PrimaryPlot(dataset)
+secondary = SecondaryPlot(primary)
+
 
 # Display things on the page
-
 spacer = Div()
-
-build_your_own_title = Div(
-    text="""
-<h2>Build-Your-Own</h2>
-<h3>Choose one per axis</h3>
-"""
+or_spacer = Div(css_classes=["or-spacer"])
+inputs_left = column(
+    primary.specials.layout(), spacer, primary.data.layout(), width=160
 )
-extras_title = Div(
-    text="""
-<h2>Extras</h2>
-<h3>Choose one per axis</h3>
-"""
-)
-
-inputs = column(
-    column(
-        build_your_own_title,
-        row(x_axis, y_axis, width=320, css_classes=["build-your-own"]),
-    ),
+inputs_right = column(
+    primary.xaxis.layout([primary.yaxis.widget]),
     spacer,
-    column(
-        extras_title, row(s_axis, c_axis, width=320, css_classes=["extras"]),
-    ),
-    width=320,
+    primary.size.layout([primary.color.widget]),
 )
-inputs.sizing_mode = "fixed"
-l = column(row(inputs, spacer, plot1), plot2)
+layout = column(
+    row(inputs_left, or_spacer, inputs_right, spacer, primary.plot),
+    secondary.plot,
+)
 
 # Load and display the data
-callback1(None, None, None)
+primary.callback(None, None, None)
 
 # Go!
-curdoc().add_root(l)
+curdoc().add_root(layout)
 curdoc().title = "delicatessen"

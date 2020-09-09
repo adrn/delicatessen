@@ -9,5 +9,5 @@ $(document).ready(function() {
     for (i = 0; i < items.length; i++) {
       items[i].size = '8';
     }
-  }, 100);
+  }, 300);
 });
