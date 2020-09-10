@@ -23,6 +23,7 @@ setup(
         "bokeh>=2.2.1",
         "requests>=2.22.0",
         "pandas>=0.25.1",
+        "tess-point>=0.4.3",
     ],
     setup_requires=["setuptools_scm"],
     scripts=["bin/deli"],

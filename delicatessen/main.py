@@ -130,6 +130,7 @@ class Plot:
             entries={
                 "None": tools.BaseTool,
                 "Show Light Curve": tools.ShowLightCurve,
+                "Deli-LATTE": tools.DeliLATTE,
             },
             default="None",
         )
