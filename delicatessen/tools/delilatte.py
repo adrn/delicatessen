@@ -410,9 +410,9 @@ class DeliLATTE(BaseTool):
             y="y",
             source=self.source,
             line_color=None,
-            color="orange",
-            alpha=0.9,
-        )
+            color="darkorange",
+            alpha=0.8,
+            size =3)
 
         self.plot.circle(
             x="x_binned",
@@ -421,7 +421,7 @@ class DeliLATTE(BaseTool):
             line_color=None,
             color="black",
             alpha=0.5,
-        )
+            size =3)
 
         # axis labels
         self.plot.xaxis.axis_label = "Time (BJD - 2457000)"
@@ -445,7 +445,8 @@ class DeliLATTE(BaseTool):
             source=self.source_bkg,
             line_color=None,
             color="blue",
-            alpha=0.5,)
+            alpha=0.5,
+            size =3)
 
         self.plot_bkg.xaxis.axis_label = "Time (BJD - 2457000)"
         self.plot_bkg.yaxis.axis_label = "Background Flux"
@@ -479,7 +480,8 @@ class DeliLATTE(BaseTool):
             source=self.source_xcen1,
             line_color=None,
             color="red",
-            alpha=0.3,)
+            alpha=0.4,
+            size = 2)
 
         self.plot_xcen.circle(
             x="x_xcen2",
@@ -487,7 +489,8 @@ class DeliLATTE(BaseTool):
             source=self.source_xcen2,
             line_color=None,
             color="black",
-            alpha=0.3,)
+            alpha=0.3,
+            size =2)
 
         self.plot_ycen.circle(
             x="x_ycen1",
@@ -495,7 +498,8 @@ class DeliLATTE(BaseTool):
             source=self.source_ycen1,
             line_color=None,
             color="red",
-            alpha=0.3,)
+            alpha=0.4,
+            size =2)
 
         self.plot_ycen.circle(
             x="x_ycen2",
@@ -503,7 +507,8 @@ class DeliLATTE(BaseTool):
             source=self.source_ycen2,
             line_color=None,
             color="black",
-            alpha=0.3,)
+            alpha=0.3,
+            size =2)
 
 
         #self.plot_xcen.xaxis.axis_label = "Time (BJD - 2457000)"
