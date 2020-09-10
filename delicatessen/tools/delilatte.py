@@ -467,10 +467,10 @@ class DeliLATTE(BaseTool):
             data=dict(x_ycen2=[], y_ycen2=[]))
 
         self.plot_xcen = figure(
-            plot_height=200, plot_width=550, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
+            plot_height=200, plot_width=600, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
         
         self.plot_ycen = figure(
-            plot_height=200, plot_width=550, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
+            plot_height=200, plot_width=600, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
 
 
         self.plot_xcen.circle(
