@@ -9,14 +9,19 @@ from collections import OrderedDict
 # Third-party
 import astropy.table as at
 import numpy as np
+import pandas as pd
+import requests
+from io import BytesIO
 from bokeh.io import curdoc
 from bokeh.layouts import column, row, Spacer
 from bokeh.models import (
     ColumnDataSource,
+    AjaxDataSource,
     Div,
     Select,
     MultiSelect,
     Slider,
+    CheckboxGroup,
     Panel,
     Tabs,
     CustomJS,
@@ -40,6 +45,7 @@ from bokeh.models.tools import (
 from bokeh.models import Range1d
 from bokeh.palettes import Viridis256
 from bokeh.transform import linear_cmap
+
 
 LOGO_URL = "https://raw.githubusercontent.com/adrn/delicatessen/master/deli_logo_med_res.gif"
 
@@ -147,7 +153,7 @@ class Plot:
             kind="parameters",
             css_classes=["build-your-own"],
             entries=parameters,
-            default="dec",
+            default="dist",
             title="Y Axis",
         )
         self.size = Selector(
@@ -155,7 +161,7 @@ class Plot:
             kind="parameters",
             css_classes=["sides"],
             entries=parameters,
-            default="dist",
+            default="None",
             title="Marker Size",
             none_allowed=True,
         )
@@ -163,22 +169,53 @@ class Plot:
             kind="parameters",
             css_classes=["sides"],
             entries=parameters,
-            default="dist",
+            default="None",
             title="Marker Color",
             none_allowed=True,
         )
+        self.checkbox_labels = [
+            "Flip x-axis",
+            "Flip y-axis ",
+            "Log scale x-axis",
+            "Log scale y-axis",
+        ]
 
-        # Set up the plot
+        self.checkbox_group = CheckboxGroup(
+            labels=self.checkbox_labels, active=[]
+        )
+
         self.source = ColumnDataSource(
             data=dict(x=[], y=[], size=[], color=[])
         )
+
+        # Register the callbacks
+        for control in [self.xaxis, self.yaxis, self.size, self.color]:
+            control.widget.on_change("value", self.param_callback)
+        self.tools.widget.on_change("value", self.tool_callback)
+        self.data.widget.on_change("value", self.data_callback)
+        self.checkbox_group.on_click(self.checkbox_callback)
+
+        # Setup the plot
+        self.setup_plot()
+
+        # Load and display the data
+        self.param_callback(None, None, None)
+
+    def setup_plot(self, x_axis_type="linear", y_axis_type="linear", x_flip=False, y_flip=False):
+        # Set up the plot
         self.plot = figure(
             plot_height=600,
             plot_width=700,
             title="",
             tooltips=[("TIC ID", "@ticid")],
             sizing_mode="scale_both",
+            x_axis_type=x_axis_type,
+            y_axis_type=y_axis_type,
         )
+
+        self.plot.x_range.flipped = x_flip
+        self.plot.y_range.flipped = y_flip
+
         self.plot.circle(
             x="x",
             y="y",
@@ -204,15 +241,12 @@ class Plot:
             CrosshairTool(),
             ResetTool(),
         )
-
-        # Register the callbacks
-        for control in [self.xaxis, self.yaxis, self.size, self.color]:
-            control.widget.on_change("value", self.param_callback)
-        self.tools.widget.on_change("value", self.tool_callback)
-        self.data.widget.on_change("value", self.data_callback)
-
-        # Load and display the data
-        self.param_callback(None, None, None)
+        # HACKZ
+        if hasattr(self.parent, "layout"):
+            self.parent.layout.children[0].children[-1] = self.plot
+        cr = self.plot.circle(x=[], y=[])
+        cr.glyph.js_on_change("size", CustomJS(code="fixSelectors();"))
+        cr.glyph.size += 1
 
     def tool_callback(self, attr, old, new):
         self.parent.change_tool(self.tools.entries[self.tools.value])
@@ -260,6 +294,35 @@ class Plot:
             color=color,
         )
 
+    def checkbox_callback(self, new):
+        """
+        Triggered when the user interacts with check boxes in appearance panel.
+        
+        """
+        if 0 in self.checkbox_group.active:
+            x_flip = True
+        else:
+            x_flip = False
+        if 1 in self.checkbox_group.active:
+            y_flip = True
+        else:
+            y_flip = False
+        if 2 in self.checkbox_group.active:
+            x_axis_type="log"
+        else:
+            x_axis_type="linear"
+        if 3 in self.checkbox_group.active:
+            y_axis_type="log"
+        else:
+            y_axis_type="linear"
+
+        #Axis labels are disappearing on selection of checkboxes
+        self.setup_plot(x_axis_type=x_axis_type,
+                        y_axis_type=y_axis_type,
+                        x_flip=x_flip,
+                        y_flip=y_flip)
+
+    
     def layout(self):
         panels = [None, None]
 
@@ -283,7 +346,7 @@ class Plot:
         )
 
         # Secondary panel: appearance
-        panels[1] = Panel(child=Div(), title="appearance",)
+        panels[1] = Panel(child=self.checkbox_group, title="appearance",)
 
         tabs = Tabs(tabs=panels, css_classes=["tabs"])
 
