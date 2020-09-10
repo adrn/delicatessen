@@ -1,3 +1,6 @@
+# delicatessen
+from . import tools
+
 # Standard library
 import pathlib
 import sys
@@ -14,6 +17,9 @@ from bokeh.models import (
     Select,
     MultiSelect,
     Slider,
+    Panel,
+    Tabs,
+    CustomJS,
 )
 from bokeh.plotting import figure
 from bokeh.models.tools import (
@@ -29,6 +35,7 @@ from bokeh.models.tools import (
     ZoomOutTool,
     HoverTool,
     CrosshairTool,
+    ResetTool,
 )
 from bokeh.models import Range1d
 from bokeh.palettes import Viridis256
@@ -55,18 +62,26 @@ class Selector:
         options = sorted(entries.keys())
         if none_allowed:
             options += ["None"]
-        self.widget = Select(
+        self.widget = MultiSelect(
             options=options,
-            value=default,
-            height=150,
+            value=[default],
+            # height=150,
+            size=8,
             name="deli-selector",
             title=title,
             css_classes=["deli-selector"],
         )
 
+        # HACK: force MultiSelect to only have 1 value selected
+        def multi_select_hack(attr, old, new):
+            if len(new) > 1:
+                self.widget.value = old
+        self.widget.on_change('value', multi_select_hack)
+
     @property
     def value(self):
-        return self.widget.value
+        # HACK: This is because we are useing MultiSelect instead of Select
+        return self.widget.value[0]
 
     def layout(self, additional_widgets=[], width=None):
         title = Div(
@@ -85,36 +100,40 @@ class Selector:
                 self.widget,
                 *additional_widgets,
                 width=width,
-                css_classes=["controls"]
+                css_classes=["controls"],
             ),
             footer,
             css_classes=self.css_classes,
         )
 
 
-class PrimaryPlot:
-    def __init__(self, dataset, parameters):
+class Plot:
+    def __init__(self, parent, dataset, parameters):
 
+        self.parent = parent
         self.dataset = dataset
 
         # Set up the controls
-        self.specials = Selector(
-            name="Specials",
-            kind="specials",
-            css_classes=["specials"],
+        self.tools = Selector(
+            name="Tools",
+            kind="tools",
+            css_classes=["tools"],
             entries={
-                "Color-magnitude diagram": "cmd",
-                "Period vs. radius": "pr",
-                "Period vs. transit duration": "pdt",
+                "None": tools.BaseTool,
+                "Show Light Curve": tools.ShowLightCurve,
             },
-            default="Color-magnitude diagram",
+            default="None",
         )
         self.data = Selector(
             name="Datasets",
             kind="datasets",
             css_classes=["data"],
-            entries={"TOI Catalog": "toi", "Confirmed Planets": "confirmed"},
-            default="Confirmed Planets",
+            entries={
+                "Test data": "test",
+                # "TOI Catalog": "toi",
+                # "Confirmed Planets": "confirmed",
+            },
+            default="Test data",
         )
         self.xaxis = Selector(
             name="Build-Your-Own",
@@ -183,20 +202,26 @@ class PrimaryPlot:
             ZoomOutTool(),
             HoverTool(),
             CrosshairTool(),
+            ResetTool(),
         )
 
-        # Register the callback
-        for control in [
-            self.specials,
-            self.data,
-            self.xaxis,
-            self.yaxis,
-            self.size,
-            self.color,
-        ]:
-            control.widget.on_change("value", self.callback)
+        # Register the callbacks
+        for control in [self.xaxis, self.yaxis, self.size, self.color]:
+            control.widget.on_change("value", self.param_callback)
+        self.tools.widget.on_change("value", self.tool_callback)
+        self.data.widget.on_change("value", self.data_callback)
 
-    def callback(self, attr, old, new):
+        # Load and display the data
+        self.param_callback(None, None, None)
+
+    def tool_callback(self, attr, old, new):
+        self.parent.change_tool(self.tools.entries[self.tools.value])
+
+    def data_callback(self, attr, old, new):
+        # TODO: Change datasets!
+        pass
+
+    def param_callback(self, attr, old, new):
         """
         Triggered when the user changes what we're plotting on the main plot.
 
@@ -210,9 +235,14 @@ class PrimaryPlot:
         # Update the "sides"
         if self.size.value != "None":
             s_name = self.size.entries[self.size.value]
-            size = self.dataset[s_name] / np.min(self.dataset[s_name])
+            size = (
+                25
+                * (self.dataset[s_name] - np.min(self.dataset[s_name]))
+                / (np.max(self.dataset[s_name]) - np.min(self.dataset[s_name]))
+            )
         else:
             size = np.ones_like(self.dataset["ticid"]) * 5
+
         if self.color.value != "None":
             c_name = self.color.entries[self.color.value]
             color = (self.dataset[c_name] - np.min(self.dataset[c_name])) / (
@@ -230,61 +260,51 @@ class PrimaryPlot:
             color=color,
         )
 
+    def layout(self):
+        panels = [None, None]
 
-class SecondaryPlot:
-    def __init__(self, primary_plot):
-        self.primary_plot = primary_plot
-        self.source = ColumnDataSource(data=dict(x=[], y=[]))
-        self.plot = figure(
-            plot_height=300, plot_width=700, title="", sizing_mode="scale_both"
+        # Main panel: data
+        panels[0] = Panel(
+            child=row(
+                column(
+                    self.data.layout(),
+                    Spacer(height=10),
+                    self.tools.layout(),
+                    width=160,
+                ),
+                Spacer(width=10),
+                column(
+                    self.xaxis.layout([self.yaxis.widget]),
+                    Spacer(height=10),
+                    self.size.layout([self.color.widget]),
+                ),
+            ),
+            title="data",
         )
-        self.plot.circle(
-            x="x",
-            y="y",
-            source=self.source,
-            line_color=None,
-            color="black",
-            alpha=0.1,
+
+        # Secondary panel: appearance
+        panels[1] = Panel(child=Div(), title="appearance",)
+
+        tabs = Tabs(tabs=panels, css_classes=["tabs"])
+
+        header = Div(
+            text=f"""<img src="{LOGO_URL}"></img>""",
+            css_classes=["header-image"],
+            width=320,
+            height=100,
         )
 
-        # Register the callback
-        self.primary_plot.source.selected.on_change("indices", self.callback)
-
-    def callback(self, attr, old, new):
-        """
-        Triggered when the user selects a point on the main plot.
-
-        """
-        # If a point is selected...
-        if len(self.primary_plot.source.selected.indices):
-
-            # Get the TIC ID
-            ticid = self.primary_plot.source.data["ticid"][
-                self.primary_plot.source.selected.indices[0]
-            ]
-            print("Fetching data for TIC ID {0}".format(ticid))
-
-            # TODO: Actually fetch the data from MAST.
-            # For now just populate with random numbers
-            self.source.data = dict(
-                x=np.linspace(0, 1, 10000), y=np.random.randn(10000)
-            )
-
-        else:
-
-            # Clear the plot
-            self.source.data = dict(x=[], y=[])
+        return row(column(header, tabs), Spacer(width=10), self.plot)
 
 
 class Delicatessen:
-
     def __init__(self, data_file=None):
 
         # This is to have a default / test data file to show. But we probably
         # want to change this, or remove the default when we "release"!
         if data_file is None:
             deli_path = pathlib.Path(__file__).parent.absolute()
-            data_file = deli_path / 'data' / 'TESS-Gaia-mini.csv'
+            data_file = deli_path / "data" / "TESS-Gaia-mini.csv"
 
         # The data file can be any file format that astropy.table can read:
         data = at.Table.read(data_file)
@@ -296,39 +316,21 @@ class Delicatessen:
 
         self.dataset = dataset
 
-        # Instantiate the plots
-        self.primary = PrimaryPlot(dataset, parameters)
-        self.secondary = SecondaryPlot(self.primary)
+        # Instantiate the plot
+        self.primary = Plot(self, dataset, parameters)
+        self.layout = column(self.primary.layout(), Div())
 
-        # Display things on the page
-        inputs_left = column(
-            self.primary.data.layout(),
-            Spacer(height=10),
-            self.primary.specials.layout(),
-            width=160,
-        )
-        inputs_right = column(
-            self.primary.xaxis.layout([self.primary.yaxis.widget]),
-            Spacer(height=10),
-            self.primary.size.layout([self.primary.color.widget]),
-        )
-        header = Div(
-            text=f"""<img src="{LOGO_URL}"></img>""",
-            css_classes=["header-image"],
-            width=320,
-            height=100,
-        )
-        inputs = column(header,
-                        row(inputs_left, Spacer(width=10), inputs_right))
-        layout = column(row(inputs, Spacer(width=10), self.primary.plot),
-                        self.secondary.plot,)
-
-        # Load and display the data
-        self.primary.callback(None, None, None)
+        # Set up the tool (none by default)
+        self.change_tool(tools.BaseTool)
 
         # Go!
-        curdoc().add_root(layout)
+        curdoc().add_root(self.layout)
         curdoc().title = "delicatessen"
+
+    def change_tool(self, tool):
+        self.secondary = tool(self)
+        self.layout.children.pop()
+        self.layout.children.append(self.secondary.layout())
 
 
 data_file = None
