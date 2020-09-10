@@ -402,7 +402,7 @@ class DeliLATTE(BaseTool):
         )
 
         self.plot = figure(
-            plot_height=320, plot_width=500, title="", sizing_mode="scale_both"
+            plot_height=300, plot_width=1200, title="", sizing_mode="scale_both"
         )
 
         self.plot.circle(
@@ -436,7 +436,7 @@ class DeliLATTE(BaseTool):
 
         # add an extra figure to plot an additional parameter - such as the background or the centroid shifts. 
         self.plot_bkg = figure(
-            plot_height=300, plot_width=500, title="", sizing_mode="scale_both", x_range=self.plot.x_range
+            plot_height=400, plot_width=1200, title="", sizing_mode="scale_both", x_range=self.plot.x_range
         )
 
         self.plot_bkg.circle(
@@ -468,10 +468,10 @@ class DeliLATTE(BaseTool):
             data=dict(x_ycen2=[], y_ycen2=[]))
 
         self.plot_xcen = figure(
-            plot_height=200, plot_width=600, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
+            plot_height=200, plot_width=1200, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
         
         self.plot_ycen = figure(
-            plot_height=200, plot_width=600, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
+            plot_height=200, plot_width=1200, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
 
 
         self.plot_xcen.circle(
@@ -528,7 +528,7 @@ class DeliLATTE(BaseTool):
 
         # add an extra figure to plot an additional parameter - such as the background or the centroid shifts. 
         self.plot_periodgrm = figure(
-            plot_height=300, plot_width=500, title="", sizing_mode="scale_both", x_axis_type="log", y_axis_type="log")
+            plot_height=400, plot_width=1200, title="", sizing_mode="scale_both", x_axis_type="log", y_axis_type="log")
 
         self.plot_periodgrm.line(
             x="x_periodgrm",
@@ -677,5 +677,5 @@ class DeliLATTE(BaseTool):
         tabs = Tabs(tabs=panels, css_classes=["tabs"])
 
 
-        return row(self.plot, tabs)
+        return column(self.plot, tabs)
 
