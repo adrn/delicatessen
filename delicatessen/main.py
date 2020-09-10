@@ -119,6 +119,7 @@ class Plot:
             entries={
                 "None": tools.BaseTool,
                 "Show Light Curve": tools.ShowLightCurve,
+                "Deli-LATTE": tools.DeliLATTE,
             },
             default="None",
         )
@@ -389,6 +390,7 @@ class Delicatessen:
         # SUPER HACK: Trigger the `fixSelectors()` function
         # since their sizes get reset whenever the layout changes
         cr = self.primary.plot.circle(x=[], y=[])
+        
         cr.glyph.js_on_change("size", CustomJS(code="fixSelectors();"))
         cr.glyph.size += 1
 
