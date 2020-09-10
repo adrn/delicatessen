@@ -82,13 +82,7 @@ p {
 }
 
 .deli-selector select option:checked {
-    /* 
-    HACK: Keep the color blue even when
-    the element is not focused. We need
-    to update the url to this image
-    if the app changes location.
-    */
-    background: #b3d7ff repeat url("https://raw.githubusercontent.com/adrn/delicatessen/master/delicatessen/templates/cool-blue.png");
+    background: #b3d7ff repeat url("../images/cool-blue.png");
 }
 
 

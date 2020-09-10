@@ -45,9 +45,11 @@ from bokeh.models.tools import (
 from bokeh.models import Range1d
 from bokeh.palettes import Viridis256
 from bokeh.transform import linear_cmap
+from bokeh.server.server import Server
 
 
-LOGO_URL = "https://raw.githubusercontent.com/adrn/delicatessen/master/deli_logo_med_res.gif"
+DELI_PATH = pathlib.Path(__file__).parent.absolute()
+LOGO_URL = "delicatessen/static/images/logo.gif"
 
 
 class Selector:
@@ -68,18 +70,27 @@ class Selector:
         options = sorted(entries.keys())
         if none_allowed:
             options += ["None"]
-        self.widget = Select(
+        self.widget = MultiSelect(
             options=options,
-            value=default,
-            height=150,
+            value=[default],
+            # height=150,
+            size=8,
             name="deli-selector",
             title=title,
             css_classes=["deli-selector"],
         )
 
+        # HACK: force MultiSelect to only have 1 value selected
+        def multi_select_hack(attr, old, new):
+            if len(new) > 1:
+                self.widget.value = old
+
+        self.widget.on_change("value", multi_select_hack)
+
     @property
     def value(self):
-        return self.widget.value
+        # HACK: This is because we are useing MultiSelect instead of Select
+        return self.widget.value[0]
 
     def layout(self, additional_widgets=[], width=None):
         title = Div(
@@ -194,7 +205,13 @@ class Plot:
         # Load and display the data
         self.param_callback(None, None, None)
 
-    def setup_plot(self, x_axis_type="linear", y_axis_type="linear", x_flip=False, y_flip=False):
+    def setup_plot(
+        self,
+        x_axis_type="linear",
+        y_axis_type="linear",
+        x_flip=False,
+        y_flip=False,
+    ):
         # Set up the plot
         self.plot = figure(
             plot_height=600,
@@ -269,6 +286,7 @@ class Plot:
             )
         else:
             size = np.ones_like(self.dataset["ticid"]) * 5
+
         if self.color.value != "None":
             c_name = self.color.entries[self.color.value]
             color = (self.dataset[c_name] - np.min(self.dataset[c_name])) / (
@@ -300,21 +318,22 @@ class Plot:
         else:
             y_flip = False
         if 2 in self.checkbox_group.active:
-            x_axis_type="log"
+            x_axis_type = "log"
         else:
-            x_axis_type="linear"
+            x_axis_type = "linear"
         if 3 in self.checkbox_group.active:
-            y_axis_type="log"
+            y_axis_type = "log"
         else:
-            y_axis_type="linear"
+            y_axis_type = "linear"
 
-        #Axis labels are disappearing on selection of checkboxes
-        self.setup_plot(x_axis_type=x_axis_type,
-                        y_axis_type=y_axis_type,
-                        x_flip=x_flip,
-                        y_flip=y_flip)
+        # Axis labels are disappearing on selection of checkboxes
+        self.setup_plot(
+            x_axis_type=x_axis_type,
+            y_axis_type=y_axis_type,
+            x_flip=x_flip,
+            y_flip=y_flip,
+        )
 
-    
     def layout(self):
         panels = [None, None]
 
@@ -353,13 +372,15 @@ class Plot:
 
 
 class Delicatessen:
-    def __init__(self, data_file=None):
+    def __init__(self, doc, data_file=None):
+
+        # Current HTML document
+        self.doc = doc
 
         # This is to have a default / test data file to show. But we probably
         # want to change this, or remove the default when we "release"!
         if data_file is None:
-            deli_path = pathlib.Path(__file__).parent.absolute()
-            data_file = deli_path / "data" / "TESS-Gaia-mini.csv"
+            data_file = DELI_PATH / "data" / "TESS-Gaia-mini.csv"
 
         # The data file can be any file format that astropy.table can read:
         data = at.Table.read(data_file)
@@ -379,23 +400,17 @@ class Delicatessen:
         self.change_tool(tools.BaseTool)
 
         # Go!
-        curdoc().add_root(self.layout)
-        curdoc().title = "delicatessen"
+        self.doc.add_root(self.layout)
+        self.doc.title = "delicatessen"
 
     def change_tool(self, tool):
         self.secondary = tool(self)
         self.layout.children.pop()
         self.layout.children.append(self.secondary.layout())
 
-        # SUPER HACK: Trigger the `fixSelectors()` function
-        # since their sizes get reset whenever the layout changes
-        cr = self.primary.plot.circle(x=[], y=[])
-        
-        cr.glyph.js_on_change("size", CustomJS(code="fixSelectors();"))
-        cr.glyph.size += 1
-
 
 data_file = None
 if len(sys.argv) > 1:
     data_file = sys.argv[1]
-deli = Delicatessen(data_file)
+
+Delicatessen(curdoc(), data_file=data_file)

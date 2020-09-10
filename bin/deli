@@ -1,0 +1,3 @@
+#!/bin/bash
+DIR=$(python -c "import delicatessen as deli; import pathlib; print(pathlib.Path(deli.__file__).parent.parent.absolute())")
+bokeh serve --show $DIR/delicatessen $@
