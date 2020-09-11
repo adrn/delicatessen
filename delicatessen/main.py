@@ -69,7 +69,7 @@ class Selector:
         self.css_classes = css_classes
         options = sorted(entries.keys())
         if none_allowed:
-            options += ["None"]
+            options = ["None"] + options
         self.widget = MultiSelect(
             options=options,
             value=[default],
@@ -127,12 +127,9 @@ class Plot:
             name="Tools",
             kind="tools",
             css_classes=["tools"],
-            entries={
-                "None": tools.BaseTool,
-                "Show Light Curve": tools.ShowLightCurve,
-                "Deli-LATTE": tools.DeliLATTE,
-            },
+            entries={"Deli-LATTE": tools.DeliLATTE},
             default="None",
+            none_allowed=True,
         )
         self.data = Selector(
             name="Datasets",
@@ -217,15 +214,22 @@ class Plot:
             plot_height=600,
             plot_width=700,
             title="",
-            tooltips=[("TIC ID", "@ticid")],
             sizing_mode="scale_both",
             x_axis_type=x_axis_type,
             y_axis_type=y_axis_type,
+            tools="",
         )
 
+        # Enable Bokeh tools
+        self.plot.add_tools(PanTool(), TapTool(), ResetTool())
+
+        # Axes orientation and labels
         self.plot.x_range.flipped = x_flip
         self.plot.y_range.flipped = y_flip
+        self.plot.xaxis.axis_label = self.xaxis.value
+        self.plot.yaxis.axis_label = self.yaxis.value
 
+        # Plot the data
         self.plot.circle(
             x="x",
             y="y",
@@ -236,30 +240,56 @@ class Plot:
             ),
             line_color=None,
         )
-        self.plot.add_tools(
-            BoxSelectTool(),
-            BoxZoomTool(),
-            LassoSelectTool(),
-            PanTool(),
-            PolySelectTool(),
-            TapTool(),
-            WheelZoomTool(),
-            WheelPanTool(),
-            ZoomInTool(),
-            ZoomOutTool(),
-            HoverTool(),
-            CrosshairTool(),
-            ResetTool(),
-        )
-        # HACKZ
+
+        # -- HACKZ --
+
+        # Update the plot element in the HTML layout
         if hasattr(self.parent, "layout"):
             self.parent.layout.children[0].children[-1] = self.plot
-        cr = self.plot.circle(x=[], y=[])
-        cr.glyph.js_on_change("size", CustomJS(code="fixSelectors();"))
-        cr.glyph.size += 1
+
+        # Make the cursor a grabber when panning
+        code_pan_start = """
+            Bokeh.grabbing = true
+            var elm = document.getElementsByClassName('bk-canvas-events')[0]
+            elm.style.cursor = 'grabbing'
+        """
+        code_pan_end = """
+            if(Bokeh.grabbing) {
+                Bokeh.grabbing = false
+                var elm = document.getElementsByClassName('bk-canvas-events')[0]
+                elm.style.cursor = 'grab'
+            }
+        """
+        self.plot.js_on_event("panstart", CustomJS(code=code_pan_start))
+        self.plot.js_on_event("panend", CustomJS(code=code_pan_end))
+
+        # Add a hover tool w/ a pointer cursor
+        code_hover = """
+        if((Bokeh.grabbing == 'undefined') || !Bokeh.grabbing) {
+            var elm = document.getElementsByClassName('bk-canvas-events')[0]
+            if (cb_data.index.indices.length > 0) {
+                elm.style.cursor = 'pointer'
+                Bokeh.pointing = true
+            } else {
+                if((Bokeh.pointing == 'undefined') || !Bokeh.pointing)
+                    elm.style.cursor = 'grab'
+                else
+                    Bokeh.pointing = false
+            }
+        }
+        """
+        self.plot.add_tools(
+            HoverTool(
+                callback=CustomJS(code=code_hover),
+                tooltips=[("TIC ID", "@ticid")],
+            )
+        )
 
     def tool_callback(self, attr, old, new):
-        self.parent.change_tool(self.tools.entries[self.tools.value])
+        if self.tools.value != "None":
+            self.parent.change_tool(self.tools.entries[self.tools.value])
+        else:
+            self.parent.change_tool(tools.BaseTool)
 
     def data_callback(self, attr, old, new):
         # TODO: Change datasets!
