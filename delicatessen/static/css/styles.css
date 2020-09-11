@@ -75,6 +75,10 @@ p {
     margin-right: auto !important;
 }
 
+.hide-title label {
+    color: #00000000 !important;
+}
+
 .deli-selector select {
     background-image: none !important;
     border-radius: 0px !important;

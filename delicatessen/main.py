@@ -60,7 +60,7 @@ class Selector:
         css_classes=[],
         entries={},
         default="",
-        title="",
+        title=None,
         none_allowed=False,
     ):
         self.name = name
@@ -70,6 +70,11 @@ class Selector:
         options = sorted(entries.keys())
         if none_allowed:
             options = ["None"] + options
+        if title is None:
+            title = "."
+            css_classes = ["deli-selector", "hide-title"]
+        else:
+            css_classes = ["deli-selector"]
         self.widget = MultiSelect(
             options=options,
             value=[default],
@@ -77,7 +82,7 @@ class Selector:
             size=8,
             name="deli-selector",
             title=title,
-            css_classes=["deli-selector"],
+            css_classes=css_classes,
         )
 
         # HACK: force MultiSelect to only have 1 value selected
