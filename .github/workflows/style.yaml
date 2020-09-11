@@ -24,9 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -U pip
-          python -m pip install -U black isort black_nbconvert
+          python -m pip install -U black
       - name: Check the style
         run: |
-          isort -c delicatessen
           black --check delicatessen
-          black_nbconvert --check .
