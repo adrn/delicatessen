@@ -25,6 +25,7 @@ setup(
         "pandas>=0.25.1",
         "tess-point>=0.4.3",
     ],
+    extras_require={"develop": ["pre-commit"]},
     setup_requires=["setuptools_scm"],
     scripts=["bin/deli"],
     include_package_data=True,

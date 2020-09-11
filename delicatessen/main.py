@@ -307,7 +307,7 @@ class Plot:
     def checkbox_callback(self, new):
         """
         Triggered when the user interacts with check boxes in appearance panel.
-        
+
         """
         if 0 in self.checkbox_group.active:
             x_flip = True
@@ -357,7 +357,7 @@ class Plot:
         )
 
         # Secondary panel: appearance
-        panels[1] = Panel(child=self.checkbox_group, title="appearance",)
+        panels[1] = Panel(child=self.checkbox_group, title="appearance")
 
         tabs = Tabs(tabs=panels, css_classes=["tabs"])
 
