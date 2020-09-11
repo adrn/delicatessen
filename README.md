@@ -1,9 +1,9 @@
 <p align="center">
   <img width = "500" src="./deli_logo_med_res.gif"/>
+  <br/>
+  Serving you all the finest TESS visualizations at
+  <a href="https://online.tess.science">online.tess.science</a>.
 </p>
-
-Serving you all the finest TESS visualizations at
-[online.tess.science](https://online.tess.science).
 
 ## Installation
 
