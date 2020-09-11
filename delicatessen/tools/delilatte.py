@@ -442,7 +442,7 @@ class DeliLATTE(BaseTool):
 
         # add an extra figure to plot an additional parameter - such as the background or the centroid shifts.
         self.plot_bkg = figure(
-            plot_height=400,
+            plot_height=300,
             min_width=600,
             min_height=300,
             title="",
@@ -476,7 +476,7 @@ class DeliLATTE(BaseTool):
         self.source_ycen2 = ColumnDataSource(data=dict(x_ycen2=[], y_ycen2=[]))
 
         self.plot_xcen = figure(
-            plot_height=200,
+            plot_height=150,
             min_width=600,
             min_height=150,
             title="",
@@ -485,7 +485,7 @@ class DeliLATTE(BaseTool):
         )
 
         self.plot_ycen = figure(
-            plot_height=200,
+            plot_height=150,
             min_width=600,
             min_height=150,
             title="",
@@ -551,7 +551,7 @@ class DeliLATTE(BaseTool):
 
         # add an extra figure to plot an additional parameter - such as the background or the centroid shifts.
         self.plot_periodgrm = figure(
-            plot_height=400,
+            plot_height=300,
             min_width=600,
             min_height=300,
             title="",
@@ -699,13 +699,7 @@ class DeliLATTE(BaseTool):
         panels = [None, None, None]
 
         # Main panel: data
-        panels[0] = Panel(
-            child=row(
-                row(self.plot_bkg, css_classes=["latte-panel-inner"]),
-                css_classes=["latte-panel-outer"],
-            ),
-            title="Background Flux",
-        )
+        panels[0] = Panel(child=self.plot_bkg, title="Background Flux")
 
         # Secondary panel: appearance
         panels[1] = Panel(
