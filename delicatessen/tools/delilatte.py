@@ -582,6 +582,9 @@ class DeliLATTE(BaseTool):
         # Register the callback
         self.parent.primary.source.selected.on_change("indices", self.callback)
 
+        # Run it
+        self.callback(None, None, None)
+
     def callback(self, attr, old, new):
         """
         Triggered when the user selects a point on the main plot.
@@ -672,10 +675,10 @@ class DeliLATTE(BaseTool):
             # - - -
             self.source_bkg.data = dict(x_bkg=[], y_bkg=[])
             # - - -
-            self.source_xcen.data = dict(x_xcen1=[], y_xcen1=[])
-            self.source_xcen.data = dict(x_xcen2=[], y_xcen2=[])
-            self.source_ycen.data = dict(x_ycen1=[], y_ycen1=[])
-            self.source_ycen.data = dict(x_ycen2=[], y_ycen2=[])
+            self.source_xcen1.data = dict(x_xcen1=[], y_xcen1=[])
+            self.source_xcen2.data = dict(x_xcen2=[], y_xcen2=[])
+            self.source_ycen1.data = dict(x_ycen1=[], y_ycen1=[])
+            self.source_ycen2.data = dict(x_ycen2=[], y_ycen2=[])
 
             self.source_periodgrm.data = dict(x_periodgrm=[], y_periodgrm=[])
             self.source_periodgrm_smooth.data = dict(
