@@ -56,6 +56,7 @@ class Selector:
     def __init__(
         self,
         name="Specials",
+        descr="Choose one",
         kind="specials",
         css_classes=[],
         entries={},
@@ -64,6 +65,7 @@ class Selector:
         none_allowed=False,
     ):
         self.name = name
+        self.descr = descr
         self.entries = entries
         self.kind = kind
         self.css_classes = css_classes
@@ -99,7 +101,7 @@ class Selector:
 
     def layout(self, additional_widgets=[], width=None):
         title = Div(
-            text="""<h2>{0}</h2><h3>Choose one</h3>""".format(self.name),
+            text="""<h2>{0}</h2><h3>{1}</h3>""".format(self.name, self.descr),
             css_classes=["controls"],
         )
         footer = Div(
@@ -129,7 +131,8 @@ class Plot:
 
         # Set up the controls
         self.tools = Selector(
-            name="Tools",
+            name="Beverages",
+            descr="Choose a plotting tool",
             kind="tools",
             css_classes=["tools"],
             entries={"Deli-LATTE": tools.DeliLATTE},
@@ -137,7 +140,8 @@ class Plot:
             none_allowed=True,
         )
         self.data = Selector(
-            name="Datasets",
+            name="Main Dishes",
+            descr="Choose a dataset",
             kind="datasets",
             css_classes=["data"],
             entries={
@@ -149,6 +153,7 @@ class Plot:
         )
         self.xaxis = Selector(
             name="Build-Your-Own",
+            descr="Choose the parameters to plot",
             kind="parameters",
             css_classes=["build-your-own"],
             entries=parameters,
@@ -164,6 +169,7 @@ class Plot:
         )
         self.size = Selector(
             name="Sides",
+            descr="Choose additional parameters to plot",
             kind="parameters",
             css_classes=["sides"],
             entries=parameters,
@@ -185,6 +191,15 @@ class Plot:
             "Log scale x-axis",
             "Log scale y-axis",
         ]
+        self.specials = Selector(
+            name="Specials",
+            descr="Choose a special",
+            kind="specials",
+            css_classes=["specials"],
+            entries={},
+            default="None",
+            none_allowed=True,
+        )
 
         self.checkbox_group = CheckboxGroup(
             labels=self.checkbox_labels, active=[]
@@ -370,7 +385,7 @@ class Plot:
         )
 
     def layout(self):
-        panels = [None, None]
+        panels = [None, None, None]
 
         # Main panel: data
         panels[0] = Panel(
@@ -388,14 +403,27 @@ class Plot:
                     self.size.layout([self.color.widget]),
                 ),
             ),
-            title="data",
+            title="Main Menu",
         )
 
-        # Secondary panel: appearance
-        panels[1] = Panel(child=self.checkbox_group, title="appearance")
+        # Secondary panel: prix fixe
+        panels[1] = Panel(child=self.specials.layout(), title="Prix Fixe")
 
+        # Tertiary panel: appearance
+        checkbox_panel = column(
+            Div(
+                text="""<h2>Toppings</h2><h3>Choose axes transforms</h3>""",
+                css_classes=["controls"],
+            ),
+            row(self.checkbox_group, width=160, css_classes=["controls"]),
+            css_classes=["axes-checkboxes"],
+        )
+        panels[2] = Panel(child=checkbox_panel, title="Garnishes")
+
+        # All tabs
         tabs = Tabs(tabs=panels, css_classes=["tabs"])
 
+        # Logo
         header = Div(
             text=f"""<img src="{LOGO_URL}"></img>""",
             css_classes=["header-image"],
