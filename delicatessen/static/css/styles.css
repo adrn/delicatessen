@@ -26,7 +26,7 @@ h3 {
     margin: 0em 5px !important;
     line-height: 1.2 !important;
     font-size: 8pt;
-    color: #aaaaaa;
+    color: #999999;
 }
 a:link {
     font-weight: bold;
@@ -94,13 +94,13 @@ p {
     content: "  ";
 }
 
-.sides, .build-your-own, .specials, .tools, .data{
+.sides, .build-your-own, .specials, .tools, .data, .axes-checkboxes{
     border: 1px solid #dddddd !important;
     border-radius: 5px !important;
 }
 
-.data{
-    background-color: #ff00801c;
+.data, .tools, .specials{
+    background-color: #ff00801c !important;
 }
 
 .controls{
