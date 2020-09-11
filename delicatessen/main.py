@@ -231,13 +231,13 @@ class Plot:
     ):
         # Set up the plot
         self.plot = figure(
-            plot_height=600,
-            plot_width=700,
+            plot_height=620,
+            min_width=600,
             title="",
-            sizing_mode="scale_both",
             x_axis_type=x_axis_type,
             y_axis_type=y_axis_type,
             tools="",
+            sizing_mode="stretch_both",
         )
 
         # Enable Bokeh tools
@@ -390,33 +390,53 @@ class Plot:
         # Main panel: data
         panels[0] = Panel(
             child=row(
-                column(
-                    self.data.layout(),
-                    Spacer(height=10),
-                    self.tools.layout(),
-                    width=160,
+                row(
+                    column(
+                        self.data.layout(),
+                        Spacer(height=10),
+                        self.tools.layout(),
+                        width=160,
+                    ),
+                    Spacer(width=10),
+                    column(
+                        self.xaxis.layout([self.yaxis.widget]),
+                        Spacer(height=10),
+                        self.size.layout([self.color.widget]),
+                    ),
+                    css_classes=["panel-inner"],
                 ),
-                Spacer(width=10),
-                column(
-                    self.xaxis.layout([self.yaxis.widget]),
-                    Spacer(height=10),
-                    self.size.layout([self.color.widget]),
-                ),
+                css_classes=["panel-outer"],
             ),
             title="Main Menu",
         )
 
         # Secondary panel: prix fixe
-        panels[1] = Panel(child=self.specials.layout(), title="Prix Fixe")
+        panels[1] = Panel(
+            child=row(
+                row(self.specials.layout(), css_classes=["panel-inner"]),
+                css_classes=["panel-outer"],
+            ),
+            title="Prix Fixe",
+        )
 
         # Tertiary panel: appearance
-        checkbox_panel = column(
-            Div(
-                text="""<h2>Toppings</h2><h3>Choose axes transforms</h3>""",
-                css_classes=["controls"],
+        checkbox_panel = row(
+            row(
+                column(
+                    Div(
+                        text="""<h2>Toppings</h2><h3>Choose axes transforms</h3>""",
+                        css_classes=["controls"],
+                    ),
+                    row(
+                        self.checkbox_group,
+                        width=160,
+                        css_classes=["controls"],
+                    ),
+                    css_classes=["axes-checkboxes"],
+                ),
+                css_classes=["panel-inner"],
             ),
-            row(self.checkbox_group, width=160, css_classes=["controls"]),
-            css_classes=["axes-checkboxes"],
+            css_classes=["panel-outer"],
         )
         panels[2] = Panel(child=checkbox_panel, title="Garnishes")
 
@@ -431,7 +451,7 @@ class Plot:
             height=100,
         )
 
-        return row(column(header, tabs), Spacer(width=10), self.plot)
+        return row(column(header, tabs), Spacer(width=30), self.plot)
 
 
 class Delicatessen:
@@ -457,7 +477,9 @@ class Delicatessen:
 
         # Instantiate the plot
         self.primary = Plot(self, dataset, parameters)
-        self.layout = column(self.primary.layout(), Div())
+        self.layout = column(
+            self.primary.layout(), Div(), sizing_mode="stretch_width"
+        )
 
         # Set up the tool (none by default)
         self.change_tool(tools.BaseTool)

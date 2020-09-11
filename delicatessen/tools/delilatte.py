@@ -405,9 +405,10 @@ class DeliLATTE(BaseTool):
 
         self.plot = figure(
             plot_height=300,
-            plot_width=1200,
+            min_width=600,
+            min_height=300,
             title="",
-            sizing_mode="scale_both",
+            sizing_mode="stretch_both",
         )
 
         self.plot.circle(
@@ -442,10 +443,12 @@ class DeliLATTE(BaseTool):
         # add an extra figure to plot an additional parameter - such as the background or the centroid shifts.
         self.plot_bkg = figure(
             plot_height=400,
-            plot_width=1200,
+            min_width=600,
+            min_height=300,
             title="",
-            sizing_mode="scale_both",
+            sizing_mode="stretch_both",
             x_range=self.plot.x_range,
+            css_classes=["latte-plot"],
         )
 
         self.plot_bkg.circle(
@@ -474,17 +477,19 @@ class DeliLATTE(BaseTool):
 
         self.plot_xcen = figure(
             plot_height=200,
-            plot_width=1200,
+            min_width=600,
+            min_height=150,
             title="",
-            sizing_mode="scale_both",
+            sizing_mode="stretch_both",
             x_range=self.plot.x_range,
         )
 
         self.plot_ycen = figure(
             plot_height=200,
-            plot_width=1200,
+            min_width=600,
+            min_height=150,
             title="",
-            sizing_mode="scale_both",
+            sizing_mode="stretch_both",
             x_range=self.plot.x_range,
         )
 
@@ -547,9 +552,10 @@ class DeliLATTE(BaseTool):
         # add an extra figure to plot an additional parameter - such as the background or the centroid shifts.
         self.plot_periodgrm = figure(
             plot_height=400,
-            plot_width=1200,
+            min_width=600,
+            min_height=300,
             title="",
-            sizing_mode="scale_both",
+            sizing_mode="stretch_both",
             x_axis_type="log",
             y_axis_type="log",
         )
@@ -574,7 +580,7 @@ class DeliLATTE(BaseTool):
 
         self.plot_periodgrm.xaxis.axis_label = "Frequency (micro Hz)"
         self.plot_periodgrm.yaxis.axis_label = (
-            "Power Spectral Density (A^2 mu Hz^-1"
+            "Power Spectral Density (A^2 mu Hz^-1)"
         )
 
         # -    -    -    -    -
@@ -693,18 +699,26 @@ class DeliLATTE(BaseTool):
         panels = [None, None, None]
 
         # Main panel: data
-        panels[0] = Panel(child=self.plot_bkg, title="Background Flux")
+        panels[0] = Panel(
+            child=row(
+                row(self.plot_bkg, css_classes=["latte-panel-inner"]),
+                css_classes=["latte-panel-outer"],
+            ),
+            title="Background Flux",
+        )
 
         # Secondary panel: appearance
         panels[1] = Panel(
-            child=column(self.plot_xcen, self.plot_ycen),
+            child=column(
+                self.plot_xcen, self.plot_ycen, sizing_mode="stretch_width"
+            ),
             title="Centroid Position",
         )
 
-        panels[2] = Panel(child=self.plot_periodgrm, title="Periodorgram")
+        panels[2] = Panel(child=self.plot_periodgrm, title="Periodogram")
 
         # panels[1] = Panel(child=self.checkbox_group, title="appearance",)
 
-        tabs = Tabs(tabs=panels, css_classes=["tabs"])
+        tabs = Tabs(tabs=panels, css_classes=["deli-tabs"])
 
-        return column(self.plot, tabs)
+        return column(self.plot, tabs, sizing_mode="stretch_width")
