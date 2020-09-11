@@ -23,7 +23,7 @@ again.
 Users:
 
 ```
-python setup.py install
+pip install .
 ```
 
 ## Usage
