@@ -14,6 +14,12 @@ pip install -e ".[develop]"
 pre-commit install
 ```
 
+This will install the repository in developer mode and enable pre-commit hooks
+for automatic formatting using the [black](https://github.com/psf/black) python
+formatter. Whenever you commit, `pre-commit` will automatically format your
+code; note that if changes are made, you'll need to run the commit command
+again.
+
 Users:
 
 ```
