@@ -13,6 +13,7 @@ dist/
 *.pdf
 *.dat
 pip-wheel-metadata/
+delicatessen/delicatessen_version.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
