@@ -1,0 +1,17 @@
+# Borrowed from github.com/exoplanet-dev/exoplanet
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.3.0
+  hooks:
+  - id: trailing-whitespace
+    exclude_types: [binary]
+    exclude: delicatessen/data/*
+  - id: end-of-file-fixer
+    exclude_types: [json,binary]
+    exclude: delicatessen/data/*
+  - id: debug-statements
+
+- repo: https://github.com/psf/black
+  rev: 19.3b0
+  hooks:
+  - id: black

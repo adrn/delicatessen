@@ -24,6 +24,7 @@ setup(
         "requests>=2.22.0",
         "pandas>=0.25.1",
         "tess-point>=0.4.3",
+        "pre-commit",
     ],
     setup_requires=["setuptools_scm"],
     scripts=["bin/deli"],

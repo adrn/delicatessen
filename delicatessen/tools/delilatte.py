@@ -16,6 +16,7 @@ from tess_stars2px import tess_stars2px_function_entry
 import http.client as httplib
 import astropy.io.fits as pf
 from bokeh.layouts import column, row, Spacer
+
 # --- functions needed to download the TESS data
 
 
@@ -69,7 +70,7 @@ def download_data(tic, binfac=5, test="no"):
 
     """
     Download the LCs for the chosen target star.
-    
+
     Parameters
     ----------
     indir   :   str
@@ -77,11 +78,11 @@ def download_data(tic, binfac=5, test="no"):
     tic : str
         TIC (Tess Input Catalog) ID of the target
     binfac  :  int
-        The factor by which the data should be binned. 
+        The factor by which the data should be binned.
         Default = 5 (which is what is shown on PHT)
-    
+
     test   :   str
-        in order to test the function with unittests we want to run it 
+        in order to test the function with unittests we want to run it
         with an input file (string to input file)
 
     Returns
@@ -101,12 +102,12 @@ def download_data(tic, binfac=5, test="no"):
     allx1  :  list
         CCD column position of target’s flux-weighted centroid. In x direction
     allx2  :  list
-        The CCD column local motion differential velocity aberration 
+        The CCD column local motion differential velocity aberration
         (DVA), pointing drift, and thermal effects. In x direction
     ally1  :  list
         CCD column position of target’s flux-weighted centroid. In y direction
     ally2  :  list
-        The CCD column local motion differential velocity aberration 
+        The CCD column local motion differential velocity aberration
         (DVA), pointing drift, and thermal effects. In y direction
     alltimel2  :  list
         time used for the x and y centroid position plottin
@@ -393,6 +394,7 @@ def download_data(tic, binfac=5, test="no"):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 class DeliLATTE(BaseTool):
     def __init__(self, parent):
         self.parent = parent
@@ -402,7 +404,10 @@ class DeliLATTE(BaseTool):
         )
 
         self.plot = figure(
-            plot_height=300, plot_width=1200, title="", sizing_mode="scale_both"
+            plot_height=300,
+            plot_width=1200,
+            title="",
+            sizing_mode="scale_both",
         )
 
         self.plot.circle(
@@ -412,7 +417,8 @@ class DeliLATTE(BaseTool):
             line_color=None,
             color="darkorange",
             alpha=0.8,
-            size =3)
+            size=3,
+        )
 
         self.plot.circle(
             x="x_binned",
@@ -421,22 +427,25 @@ class DeliLATTE(BaseTool):
             line_color=None,
             color="black",
             alpha=0.5,
-            size =3)
+            size=3,
+        )
 
         # axis labels
         self.plot.xaxis.axis_label = "Time (BJD - 2457000)"
         self.plot.yaxis.axis_label = "Normalised Flux"
 
-
         # - - - Backgrounds - - - -
         # - - - - - - - - - - - - -
 
-        self.source_bkg = ColumnDataSource(
-            data=dict(x_bkg=[], y_bkg=[]))
+        self.source_bkg = ColumnDataSource(data=dict(x_bkg=[], y_bkg=[]))
 
-        # add an extra figure to plot an additional parameter - such as the background or the centroid shifts. 
+        # add an extra figure to plot an additional parameter - such as the background or the centroid shifts.
         self.plot_bkg = figure(
-            plot_height=400, plot_width=1200, title="", sizing_mode="scale_both", x_range=self.plot.x_range
+            plot_height=400,
+            plot_width=1200,
+            title="",
+            sizing_mode="scale_both",
+            x_range=self.plot.x_range,
         )
 
         self.plot_bkg.circle(
@@ -446,33 +455,38 @@ class DeliLATTE(BaseTool):
             line_color=None,
             color="blue",
             alpha=0.5,
-            size =3)
+            size=3,
+        )
 
         self.plot_bkg.xaxis.axis_label = "Time (BJD - 2457000)"
         self.plot_bkg.yaxis.axis_label = "Background Flux"
 
+        # - - - Centroic Plot - - -
+        # - - - - - - - - - - - - -
 
-        # - - - Centroic Plot - - - 
-        # - - - - - - - - - - - - - 
+        self.source_xcen1 = ColumnDataSource(data=dict(x_xcen1=[], y_xcen1=[]))
 
-        self.source_xcen1 = ColumnDataSource(
-            data=dict(x_xcen1=[], y_xcen1=[]))
+        self.source_xcen2 = ColumnDataSource(data=dict(x_xcen2=[], y_xcen2=[]))
 
-        self.source_xcen2 = ColumnDataSource(
-            data=dict(x_xcen2=[], y_xcen2=[]))
+        self.source_ycen1 = ColumnDataSource(data=dict(x_ycen1=[], y_ycen1=[]))
 
-        self.source_ycen1 = ColumnDataSource(
-            data=dict(x_ycen1=[], y_ycen1=[]))
-
-        self.source_ycen2 = ColumnDataSource(
-            data=dict(x_ycen2=[], y_ycen2=[]))
+        self.source_ycen2 = ColumnDataSource(data=dict(x_ycen2=[], y_ycen2=[]))
 
         self.plot_xcen = figure(
-            plot_height=200, plot_width=1200, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
-        
-        self.plot_ycen = figure(
-            plot_height=200, plot_width=1200, title="", sizing_mode="scale_both", x_range=self.plot.x_range)
+            plot_height=200,
+            plot_width=1200,
+            title="",
+            sizing_mode="scale_both",
+            x_range=self.plot.x_range,
+        )
 
+        self.plot_ycen = figure(
+            plot_height=200,
+            plot_width=1200,
+            title="",
+            sizing_mode="scale_both",
+            x_range=self.plot.x_range,
+        )
 
         self.plot_xcen.circle(
             x="x_xcen1",
@@ -481,7 +495,8 @@ class DeliLATTE(BaseTool):
             line_color=None,
             color="red",
             alpha=0.4,
-            size = 2)
+            size=2,
+        )
 
         self.plot_xcen.circle(
             x="x_xcen2",
@@ -490,7 +505,8 @@ class DeliLATTE(BaseTool):
             line_color=None,
             color="black",
             alpha=0.3,
-            size =2)
+            size=2,
+        )
 
         self.plot_ycen.circle(
             x="x_ycen1",
@@ -499,7 +515,8 @@ class DeliLATTE(BaseTool):
             line_color=None,
             color="red",
             alpha=0.4,
-            size =2)
+            size=2,
+        )
 
         self.plot_ycen.circle(
             x="x_ycen2",
@@ -508,27 +525,34 @@ class DeliLATTE(BaseTool):
             line_color=None,
             color="black",
             alpha=0.3,
-            size =2)
+            size=2,
+        )
 
-
-        #self.plot_xcen.xaxis.axis_label = "Time (BJD - 2457000)"
+        # self.plot_xcen.xaxis.axis_label = "Time (BJD - 2457000)"
         self.plot_xcen.yaxis.axis_label = "x-centroid"
         self.plot_ycen.xaxis.axis_label = "Time (BJD - 2457000)"
         self.plot_ycen.yaxis.axis_label = "y-centroid"
 
-
-        # - - - Periodogram - - - 
-        # - - - - - - - - - - - - - 
+        # - - - Periodogram - - -
+        # - - - - - - - - - - - - -
 
         self.source_periodgrm = ColumnDataSource(
-            data=dict(x_periodgrm=[], y_periodgrm=[]))
-        
-        self.source_periodgrm_smooth = ColumnDataSource(
-            data=dict(x_periodgrm_smooth=[], y_periodgrm_smooth=[]))
+            data=dict(x_periodgrm=[], y_periodgrm=[])
+        )
 
-        # add an extra figure to plot an additional parameter - such as the background or the centroid shifts. 
+        self.source_periodgrm_smooth = ColumnDataSource(
+            data=dict(x_periodgrm_smooth=[], y_periodgrm_smooth=[])
+        )
+
+        # add an extra figure to plot an additional parameter - such as the background or the centroid shifts.
         self.plot_periodgrm = figure(
-            plot_height=400, plot_width=1200, title="", sizing_mode="scale_both", x_axis_type="log", y_axis_type="log")
+            plot_height=400,
+            plot_width=1200,
+            title="",
+            sizing_mode="scale_both",
+            x_axis_type="log",
+            y_axis_type="log",
+        )
 
         self.plot_periodgrm.line(
             x="x_periodgrm",
@@ -536,7 +560,8 @@ class DeliLATTE(BaseTool):
             source=self.source_periodgrm,
             line_color="black",
             color="black",
-            alpha=1,)
+            alpha=1,
+        )
 
         self.plot_periodgrm.line(
             x="x_periodgrm_smooth",
@@ -544,16 +569,18 @@ class DeliLATTE(BaseTool):
             source=self.source_periodgrm_smooth,
             line_color="red",
             color="red",
-            alpha=1,)
+            alpha=1,
+        )
 
         self.plot_periodgrm.xaxis.axis_label = "Frequency (micro Hz)"
-        self.plot_periodgrm.yaxis.axis_label = "Power Spectral Density (A^2 mu Hz^-1"
+        self.plot_periodgrm.yaxis.axis_label = (
+            "Power Spectral Density (A^2 mu Hz^-1"
+        )
 
         # -    -    -    -    -
 
         # Register the callback
         self.parent.primary.source.selected.on_change("indices", self.callback)
-
 
     def callback(self, attr, old, new):
         """
@@ -589,63 +616,60 @@ class DeliLATTE(BaseTool):
                 srad,
             ) = download_data(ticid, binfac=5, test="no")
 
-
             print("... download done.")
 
             self.source.data = dict(x=alltime, y=allflux)
 
             self.source_binned.data = dict(
-                x_binned=alltimebinned, y_binned=allfluxbinned)
+                x_binned=alltimebinned, y_binned=allfluxbinned
+            )
 
             # - - - Backgrounds - - - -
             # - - - - - - - - - - - - -
-            self.source_bkg.data = dict(
-                x_bkg=alltime, y_bkg=allfbkg)
+            self.source_bkg.data = dict(x_bkg=alltime, y_bkg=allfbkg)
 
+            # - - - Centroic Plot - - -
+            # - - - - - - - - - - - - -
 
-            # - - - Centroic Plot - - - 
-            # - - - - - - - - - - - - - 
+            self.source_xcen1.data = dict(x_xcen1=alltimel2, y_xcen1=allx1)
+            self.source_xcen2.data = dict(x_xcen2=alltimel2, y_xcen2=allx2)
 
-            self.source_xcen1.data = dict(
-                x_xcen1=alltimel2, y_xcen1=allx1)
-            self.source_xcen2.data = dict(
-                x_xcen2=alltimel2, y_xcen2=allx2)
-            
-            # -   -   -   -   -   -   -  
-            self.source_ycen1.data = dict(
-                x_ycen1=alltimel2, y_ycen1=ally1)
-            self.source_ycen2.data = dict(
-                x_ycen2=alltimel2, y_ycen2=ally2)
+            # -   -   -   -   -   -   -
+            self.source_ycen1.data = dict(x_ycen1=alltimel2, y_ycen1=ally1)
+            self.source_ycen2.data = dict(x_ycen2=alltimel2, y_ycen2=ally2)
 
             # - - - Periodogram - - - -
             # - - - - - - - - - - - - -
-            finite_mask = np.isfinite(alltime) & np.isfinite(allflux) 
+            finite_mask = np.isfinite(alltime) & np.isfinite(allflux)
 
-            lc = lk.lightcurve.LightCurve(time = alltime[finite_mask], flux = allflux[finite_mask])
-    
+            lc = lk.lightcurve.LightCurve(
+                time=alltime[finite_mask], flux=allflux[finite_mask]
+            )
+
             lc = lc.remove_outliers().remove_nans()
-            ls = lc.to_periodogram(normalization = 'psd')
-    
-            smooth = ls.smooth(method='boxkernel', filter_width=20.)
-    
+            ls = lc.to_periodogram(normalization="psd")
+
+            smooth = ls.smooth(method="boxkernel", filter_width=20.0)
+
             freq = ls.frequency
             power = ls.power
-    
+
             freq_smooth = smooth.frequency
             power_smooth = smooth.power
 
             self.source_periodgrm.data = dict(
-                x_periodgrm=freq, y_periodgrm=power)
+                x_periodgrm=freq, y_periodgrm=power
+            )
 
             self.source_periodgrm_smooth.data = dict(
-                x_periodgrm_smooth=freq_smooth, y_periodgrm_smooth=power_smooth)
-            
+                x_periodgrm_smooth=freq_smooth, y_periodgrm_smooth=power_smooth
+            )
 
         else:
             # Clear the plot
             self.source.data = dict(x=[], y=[])
             self.source_binned.data = dict(x_binned=[], y_binned=[])
-            # - - - 
+            # - - -
             self.source_bkg.data = dict(x_bkg=[], y_bkg=[])
             # - - -
             self.source_xcen.data = dict(x_xcen1=[], y_xcen1=[])
@@ -654,28 +678,30 @@ class DeliLATTE(BaseTool):
             self.source_ycen.data = dict(x_ycen2=[], y_ycen2=[])
 
             self.source_periodgrm.data = dict(x_periodgrm=[], y_periodgrm=[])
-            self.source_periodgrm_smooth.data = dict(x_periodgrm_smooth=[], y_periodgrm_smooth=[])
+            self.source_periodgrm_smooth.data = dict(
+                x_periodgrm_smooth=[], y_periodgrm_smooth=[]
+            )
 
             # self.plot.xaxis.axis_label = 'Time (BJD - 2457000)'
             # self.plot.yaxis.axis_label = 'Normalised Flux'
 
     def layout(self):
 
-
         panels = [None, None, None]
 
         # Main panel: data
-        panels[0] = Panel(child = self.plot_bkg, title = 'Background Flux')
+        panels[0] = Panel(child=self.plot_bkg, title="Background Flux")
 
         # Secondary panel: appearance
-        panels[1] = Panel(child = column(self.plot_xcen, self.plot_ycen), title = 'Centroid Position')
-        
-        panels[2] = Panel(child = self.plot_periodgrm, title = 'Periodorgram')
+        panels[1] = Panel(
+            child=column(self.plot_xcen, self.plot_ycen),
+            title="Centroid Position",
+        )
+
+        panels[2] = Panel(child=self.plot_periodgrm, title="Periodorgram")
 
         # panels[1] = Panel(child=self.checkbox_group, title="appearance",)
 
         tabs = Tabs(tabs=panels, css_classes=["tabs"])
 
-
         return column(self.plot, tabs)
-
